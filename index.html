@@ -1,0 +1,2206 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบจองห้องประชุมออนไลน์ - วิทยาลัยเทคนิคท่าหลวงซิเมนต์ไทยอนุสรณ์</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Kanit & Sarabun -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- SweetAlert2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            kanit: ['Kanit', 'sans-serif'],
+            sarabun: ['Sarabun', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f0f5ff',
+              100: '#e0ecff',
+              500: '#2563eb',
+              600: '#1d4ed8',
+              800: '#1e3a8a', // Thaluang Navy Blue
+              900: '#0f172a',
+              gold: '#d97706', // Thaluang Gold
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Kanit', sans-serif;
+      background-color: #f8fafc;
+    }
+    .print-only { display: none; }
+    @media print {
+      body * { visibility: hidden; }
+      #printable-area, #printable-area * { visibility: visible; }
+      #printable-area { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
+      .no-print { display: none !important; }
+    }
+    .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: #f1f5f9; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .badge-approved { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .badge-pending { background-color: #fef9c3; color: #854d0e; border: 1px solid #fef08a; }
+    .badge-ready { background-color: #e0f2fe; color: #075985; border: 1px solid #bae6fd; }
+    .badge-rejected { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+  </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+  <!-- ================= TOPBAR & NAVIGATION ================= -->
+  <header class="bg-gradient-to-r from-brand-800 via-indigo-900 to-brand-900 text-white shadow-lg sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-20">
+        <!-- Logo & Title -->
+        <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('dashboard')">
+          <div class="w-12 h-12 rounded-xl bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center text-amber-400 text-2xl shadow-inner">
+            <i class="fa-solid fa-hotel"></i>
+          </div>
+          <div>
+            <div class="text-xs font-light text-amber-300 tracking-wider">ระบบจองห้องประชุมออนไลน์</div>
+            <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white leading-tight">วิทยาลัยเทคนิคท่าหลวงซิเมนต์ไทยอนุสรณ์</h1>
+            <p class="text-[11px] text-slate-300 hidden sm:block">Thaluang Cementhai Anusorn Technical College</p>
+          </div>
+        </div>
+
+        <!-- Desktop Navigation Tabs -->
+        <nav class="hidden md:flex space-x-1 lg:space-x-2">
+          <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 bg-white/20 text-white">
+            <i class="fa-solid fa-chart-pie"></i>
+            <span>แดชบอร์ด</span>
+          </button>
+          <button onclick="switchTab('calendar')" id="nav-calendar" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-slate-200 hover:bg-white/10 hover:text-white">
+            <i class="fa-solid fa-calendar-days"></i>
+            <span>ปฏิทินการจอง</span>
+          </button>
+          <button onclick="switchTab('booking')" id="nav-booking" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-slate-200 hover:bg-white/10 hover:text-white">
+            <i class="fa-solid fa-circle-plus text-amber-400"></i>
+            <span>ขอใช้ห้องประชุม</span>
+          </button>
+          <button onclick="switchTab('approval')" id="nav-approval" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-slate-200 hover:bg-white/10 hover:text-white relative">
+            <i class="fa-solid fa-clipboard-check"></i>
+            <span>พิจารณาอนุมัติ</span>
+            <span id="pending-badge" class="hidden absolute -top-1 -right-1 px-1.5 py-0.5 text-[10px] font-bold bg-amber-500 text-slate-900 rounded-full animate-pulse">0</span>
+          </button>
+          <button onclick="switchTab('reports')" id="nav-reports" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-slate-200 hover:bg-white/10 hover:text-white">
+            <i class="fa-solid fa-file-lines"></i>
+            <span>รายงานและสถิติ</span>
+          </button>
+        </nav>
+
+        <!-- Setting & Status Buttons -->
+        <div class="flex items-center space-x-2">
+          <button onclick="openConfigModal()" title="ตั้งค่าการเชื่อมต่อ Google Sheets" class="p-2 text-slate-200 hover:text-amber-300 hover:bg-white/10 rounded-lg transition relative">
+            <i class="fa-solid fa-gear text-lg"></i>
+            <span id="connection-dot" class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border border-brand-900"></span>
+          </button>
+          
+          <!-- Mobile menu button -->
+          <button onclick="toggleMobileMenu()" class="md:hidden p-2 text-slate-200 hover:text-white hover:bg-white/10 rounded-lg">
+            <i class="fa-solid fa-bars text-xl"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Dropdown Navigation -->
+    <div id="mobile-menu" class="hidden md:hidden border-t border-white/10 bg-brand-900 px-4 pt-2 pb-4 space-y-1">
+      <button onclick="switchTab('dashboard'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10 flex items-center space-x-3">
+        <i class="fa-solid fa-chart-pie w-5"></i> <span>แดชบอร์ดภาพรวม</span>
+      </button>
+      <button onclick="switchTab('calendar'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-white/10 flex items-center space-x-3">
+        <i class="fa-solid fa-calendar-days w-5"></i> <span>ปฏิทินการจอง</span>
+      </button>
+      <button onclick="switchTab('booking'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-md text-base font-medium text-amber-300 hover:bg-white/10 flex items-center space-x-3">
+        <i class="fa-solid fa-circle-plus w-5"></i> <span>ขอใช้ห้องประชุม</span>
+      </button>
+      <button onclick="switchTab('approval'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-white/10 flex items-center space-x-3">
+        <i class="fa-solid fa-clipboard-check w-5"></i> <span>สายงานพิจารณาอนุมัติ</span>
+      </button>
+      <button onclick="switchTab('reports'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-white/10 flex items-center space-x-3">
+        <i class="fa-solid fa-file-lines w-5"></i> <span>รายงานและสถิติ</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Connection Status Banner -->
+  <div id="live-status-banner" class="bg-blue-50 border-b border-blue-200 px-4 py-2 text-xs text-blue-900 flex items-center justify-between">
+    <div class="flex items-center space-x-2">
+      <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+      <span class="font-medium">โหมดเชื่อมต่อ:</span>
+      <span id="status-mode-text" class="text-slate-700">Google Sheets Live Data (Spreadsheet ID: 1Ap5...k3k)</span>
+    </div>
+    <div class="flex items-center space-x-3 text-xs">
+      <span id="last-updated-time" class="text-slate-500">อัปเดตล่าสุด: กำลังโหลด...</span>
+      <button onclick="refreshData(true)" class="text-brand-600 hover:text-brand-800 font-medium flex items-center space-x-1">
+        <i class="fa-solid fa-arrows-rotate"></i>
+        <span>รีเฟรช</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= MAIN CONTENT CONTAINER ================= -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+
+    <!-- TAB 1: DASHBOARD -->
+    <section id="tab-dashboard" class="space-y-6">
+      <!-- Welcome Header -->
+      <div class="bg-gradient-to-r from-blue-900 to-indigo-800 rounded-2xl p-6 sm:p-8 text-white shadow-md relative overflow-hidden">
+        <div class="absolute -right-8 -bottom-8 opacity-10 text-9xl">
+          <i class="fa-solid fa-landmark"></i>
+        </div>
+        <div class="relative z-10 max-w-2xl">
+          <div class="inline-flex items-center px-3 py-1 rounded-full bg-white/20 text-xs text-amber-300 font-medium mb-3 backdrop-blur">
+            <i class="fa-solid fa-shield-halved mr-1.5"></i> ศูนย์ดิจิทัลและสื่อสารองค์กร
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-bold mb-2">ระบบบริหารจัดการและจองห้องประชุม</h2>
+          <p class="text-slate-200 text-sm sm:text-base font-light leading-relaxed">
+            อำนวยความสะดวกในการตรวจสอบห้องว่าง ยื่นคำขอใช้สถานที่ ครุภัณฑ์ และติดตามสายการพิจารณาตรวจสอบแบบเรียลไทม์
+          </p>
+          <div class="mt-6 flex flex-wrap gap-3">
+            <button onclick="switchTab('booking')" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold rounded-xl text-sm transition shadow-lg flex items-center space-x-2">
+              <i class="fa-solid fa-paper-plane"></i>
+              <span>ยื่นคำขอจองห้องประชุม</span>
+            </button>
+            <button onclick="switchTab('calendar')" class="px-5 py-2.5 bg-white/20 hover:bg-white/30 text-white font-medium rounded-xl text-sm transition backdrop-blur flex items-center space-x-2">
+              <i class="fa-solid fa-calendar-check"></i>
+              <span>ตรวจปฏิทินห้องว่าง</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stat Cards Grid -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Card 1 -->
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex items-center justify-between">
+          <div>
+            <p class="text-xs text-slate-500 font-medium">การจองวันนี้</p>
+            <h3 id="stat-today" class="text-2xl sm:text-3xl font-bold text-slate-800 mt-1">0</h3>
+            <span class="text-[11px] text-emerald-600 font-medium flex items-center mt-1">
+              <i class="fa-solid fa-clock mr-1"></i> วาระวันนี้
+            </span>
+          </div>
+          <div class="w-12 h-12 bg-blue-50 text-brand-600 rounded-xl flex items-center justify-center text-xl">
+            <i class="fa-solid fa-calendar-day"></i>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex items-center justify-between">
+          <div>
+            <p class="text-xs text-slate-500 font-medium">อนุมัติเรียบร้อย</p>
+            <h3 id="stat-approved" class="text-2xl sm:text-3xl font-bold text-emerald-600 mt-1">0</h3>
+            <span class="text-[11px] text-slate-400 font-medium flex items-center mt-1">
+              <i class="fa-solid fa-check-double mr-1"></i> พร้อมใช้งาน
+            </span>
+          </div>
+          <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-xl">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex items-center justify-between">
+          <div>
+            <p class="text-xs text-slate-500 font-medium">รอการตรวจสอบ/อนุมัติ</p>
+            <h3 id="stat-pending" class="text-2xl sm:text-3xl font-bold text-amber-500 mt-1">0</h3>
+            <span class="text-[11px] text-amber-600 font-medium flex items-center mt-1">
+              <i class="fa-solid fa-hourglass-half mr-1"></i> ในขั้นตอนพิจารณา
+            </span>
+          </div>
+          <div class="w-12 h-12 bg-amber-50 text-amber-500 rounded-xl flex items-center justify-center text-xl">
+            <i class="fa-solid fa-user-clock"></i>
+          </div>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex items-center justify-between">
+          <div>
+            <p class="text-xs text-slate-500 font-medium">ห้องประชุมทั้งหมด</p>
+            <h3 id="stat-rooms" class="text-2xl sm:text-3xl font-bold text-slate-800 mt-1">6+</h3>
+            <span class="text-[11px] text-brand-600 font-medium flex items-center mt-1">
+              <i class="fa-solid fa-door-open mr-1"></i> ครอบคลุมทุกอาคาร
+            </span>
+          </div>
+          <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center text-xl">
+            <i class="fa-solid fa-building"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Room Status Grid -->
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-lg font-bold text-slate-800">สถานะห้องประชุมประจำวันนี้</h3>
+            <p class="text-xs text-slate-500">ตรวจสอบความพร้อมและการใช้งานแบบเรียลไทม์</p>
+          </div>
+          <span class="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-medium">
+            <i class="fa-solid fa-circle text-[8px] text-emerald-500 mr-1.5"></i> อัปเดตอัตโนมัติ
+          </span>
+        </div>
+
+        <div id="room-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <!-- Room cards will be rendered dynamically by JavaScript -->
+        </div>
+      </div>
+
+      <!-- Today's Schedule Table -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <div class="w-3 h-3 rounded-full bg-brand-600"></div>
+            <h3 class="font-bold text-slate-800">ตารางการใช้ห้องประชุมวันนี้</h3>
+          </div>
+          <span id="today-date-display" class="text-xs font-medium text-slate-500"></span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left">
+            <thead class="text-xs text-slate-500 bg-slate-50 uppercase border-b border-slate-200">
+              <tr>
+                <th class="px-6 py-3">ช่วงเวลา</th>
+                <th class="px-6 py-3">ห้องประชุม</th>
+                <th class="px-6 py-3">เรื่อง / วัตถุประสงค์</th>
+                <th class="px-6 py-3">ผู้ขอใช้ / หน่วยงาน</th>
+                <th class="px-6 py-3">ผู้เข้าร่วม</th>
+                <th class="px-6 py-3">สถานะ</th>
+                <th class="px-6 py-3 text-right">รายละเอียด</th>
+              </tr>
+            </thead>
+            <tbody id="today-schedule-tbody" class="divide-y divide-slate-100">
+              <tr>
+                <td colspan="7" class="px-6 py-8 text-center text-slate-400">
+                  <i class="fa-regular fa-calendar-xmark text-3xl mb-2 block"></i>
+                  ไม่มีการใช้งานห้องประชุมในวันนี้
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: CALENDAR VIEW -->
+    <section id="tab-calendar" class="space-y-6 hidden">
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+        <!-- Calendar Header Controls -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
+          <div class="flex items-center space-x-3">
+            <h2 id="calendar-month-year" class="text-2xl font-bold text-slate-800">ตุลาคม 2026</h2>
+            <div class="flex space-x-1">
+              <button onclick="changeMonth(-1)" class="p-2 border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600">
+                <i class="fa-solid fa-chevron-left"></i>
+              </button>
+              <button onclick="goToTodayMonth()" class="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-700">
+                วันนี้
+              </button>
+              <button onclick="changeMonth(1)" class="p-2 border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600">
+                <i class="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Room Filter -->
+          <div class="flex flex-wrap items-center gap-2">
+            <label class="text-xs font-medium text-slate-500">กรองห้องประชุม:</label>
+            <select id="calendar-room-filter" onchange="renderCalendar()" class="text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+              <option value="all">ทุกห้องประชุม</option>
+              <option value="หอประชุมอดิเรกสาร">หอประชุมอดิเรกสาร</option>
+              <option value="ห้องประชุมสักทอง">ห้องประชุมสักทอง</option>
+              <option value="อาคารโดมเอนกประสงค์">อาคารโดมเอนกประสงค์</option>
+              <option value="ห้องประชุม (กาแฟ)">ห้องประชุม (กาแฟ)</option>
+              <option value="ห้องประชุมหน้าห้องผู้อำนวยการ">ห้องประชุมหน้าห้องผู้อำนวยการ</option>
+              <option value="ห้องคอมพิวเตอร์กลาง (ห้องโสต)">ห้องคอมพิวเตอร์กลาง (ห้องโสต)</option>
+              <option value="อื่นๆ">อื่นๆ</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Calendar Legend -->
+        <div class="flex flex-wrap items-center gap-4 py-3 text-xs text-slate-600">
+          <div class="flex items-center space-x-1.5">
+            <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+            <span>อนุมัติเรียบร้อย</span>
+          </div>
+          <div class="flex items-center space-x-1.5">
+            <span class="w-3 h-3 rounded-full bg-sky-500"></span>
+            <span>ห้องพร้อม-รออนุมัติ</span>
+          </div>
+          <div class="flex items-center space-x-1.5">
+            <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+            <span>รอการตรวจสอบ</span>
+          </div>
+          <div class="flex items-center space-x-1.5">
+            <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+            <span>ไม่อนุมัติ / ห้องไม่พร้อม</span>
+          </div>
+        </div>
+
+        <!-- Calendar Days Grid -->
+        <div class="mt-4">
+          <div class="grid grid-cols-7 gap-px bg-slate-200 rounded-t-xl overflow-hidden text-center text-xs font-semibold py-2 bg-slate-100 text-slate-600">
+            <div class="text-rose-500">อาทิตย์</div>
+            <div>จันทร์</div>
+            <div>อังคาร</div>
+            <div>พุธ</div>
+            <div>พฤหัสบดี</div>
+            <div>ศุกร์</div>
+            <div class="text-brand-600">เสาร์</div>
+          </div>
+          <div id="calendar-days-container" class="grid grid-cols-7 gap-px bg-slate-200 border-b border-l border-r border-slate-200 rounded-b-xl overflow-hidden min-h-[550px]">
+            <!-- Day cells will be generated dynamically -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: BOOKING FORM -->
+    <section id="tab-booking" class="space-y-6 hidden">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden max-w-4xl mx-auto">
+        <!-- Form Header -->
+        <div class="bg-gradient-to-r from-brand-800 to-indigo-900 px-6 sm:px-8 py-6 text-white">
+          <div class="flex items-center space-x-3 mb-2">
+            <span class="px-2.5 py-1 rounded bg-amber-400 text-slate-900 text-xs font-bold uppercase tracking-wider">แบบฟอร์มทางการ</span>
+            <span class="text-xs text-slate-300">วิทยาลัยเทคนิคท่าหลวงซิเมนต์ไทยอนุสรณ์</span>
+          </div>
+          <h2 class="text-xl sm:text-2xl font-bold">แบบฟอร์มขอใช้ห้องประชุมและสิ่งอำนวยความสะดวก</h2>
+          <p class="text-xs sm:text-sm text-slate-200 mt-1">กรอกข้อมูลเพื่อส่งเรื่องเสนอรับรอง ตรวจสอบสภาพห้อง และเสนออนุมัติตามสายงาน</p>
+        </div>
+
+        <!-- Form Body -->
+        <form id="booking-form" onsubmit="handleBookingSubmit(event)" class="p-6 sm:p-8 space-y-8 font-sarabun text-slate-700">
+          
+          <!-- 1. ข้อมูลผู้ขอใช้ -->
+          <div class="space-y-4">
+            <div class="flex items-center space-x-2 border-b border-slate-200 pb-2">
+              <span class="w-7 h-7 rounded-full bg-brand-800 text-white flex items-center justify-center font-bold text-xs">1</span>
+              <h3 class="font-bold text-slate-800 font-kanit text-lg">ข้อมูลผู้ขอใช้บริการ</h3>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-semibold mb-1 text-slate-700">ชื่อ - สกุล ผู้ขอใช้ <span class="text-rose-500">*</span></label>
+                <input type="text" name="fullName" required placeholder="เช่น นายสมคิด สายใจ" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-brand-500 focus:outline-none text-sm">
+              </div>
+              <div>
+                <label class="block text-sm font-semibold mb-1 text-slate-700">ตำแหน่ง <span class="text-rose-500">*</span></label>
+                <input type="text" name="position" required placeholder="เช่น ครูชำนาญการ, หัวหน้าแผนก" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-brand-500 focus:outline-none text-sm">
+              </div>
+              <div>
+                <label class="block text-sm font-semibold mb-1 text-slate-700">หน่วยงาน / แผนกวิชา <span class="text-rose-500">*</span></label>
+                <input type="text" name="department" required placeholder="เช่น แผนกวิชาช่างยนต์, งานกิจกรรมนักเรียนนักศึกษา" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-brand-500 focus:outline-none text-sm">
+              </div>
+              <div>
+                <label class="block text-sm font-semibold mb-1 text-slate-700">หมายเลขโทรศัพท์ติดต่อ <span class="text-rose-500">*</span></label>
+                <input type="tel" name="phone" required placeholder="เช่น 081-234-5678" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-brand-500 focus:outline-none text-sm">
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. วัตถุประสงค์และการเลือกห้องประชุม -->
+          <div class="space-y-4">
+            <div class="flex items-center space-x-2 border-b border-slate-200 pb-2">
+              <span class="w-7 h-7 rounded-full bg-brand-800 text-white flex items-center justify-center font-bold text-xs">2</span>
+              <h3 class="font-bold text-slate-800 font-kanit text-lg">วัตถุประสงค์และห้องประชุมที่ต้องการ</h3>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-semibold mb-1 text-slate-700">วัตถุประสงค์การใช้งาน / ระบุเรื่อง <span class="text-rose-500">*</span></label>
+              <textarea name="objective" rows="2" required placeholder="ระบุหัวข้อประชุม อบรม สัมมนา หรือกิจกรรม..." class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-brand-500 focus:outline-none text-sm"></textarea>
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold mb-2 text-slate-700">เลือกห้องประชุม <span class="text-rose-500">*</span></label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                <label class="flex items-start p-3 border border-slate-200 rounded-xl hover:bg-blue-50/50 cursor-pointer transition">
+                  <input type="radio" name="roomName" value="หอประชุมอดิเรกสาร" required onchange="triggerAvailabilityCheck()" class="mt-1 text-brand-600 focus:ring-brand-500">
+                  <div class="ml-3">
+                    <span class="block text-sm font-bold text-slate-800">หอประชุมอดิเรกสาร</span>
+                    <span class="block text-xs text-slate-500">ความจุ ~500 คน (อาคารอำนวยการ)</span>
+                  </div>
+                </label>
+
+                <label class="flex items-start p-3 border border-slate-200 rounded-xl hover:bg-blue-50/50 cursor-pointer transition">
+                  <input type="radio" name="roomName" value="ห้องประชุมสักทอง" required onchange="triggerAvailabilityCheck()" class="mt-1 text-brand-600 focus:ring-brand-500">
+                  <div class="ml-3">
+                    <span class="block text-sm font-bold text-slate-800">ห้องประชุมสักทอง</span>
+                    <span class="block text-xs text-slate-500">ความจุ ~80 คน (อาคาร 2)</span>
+                  </div>
+                </label>
+
+                <label class="flex items-start p-3 border border-slate-200 rounded-xl hover:bg-blue-50/50 cursor-pointer transition">
+                  <input type="radio" name="roomName" value="อาคารโดมเอนกประสงค์" required onchange="triggerAvailabilityCheck()" class="mt-1 text-brand-600 focus:ring-brand-500">
+                  <div class="ml-3">
+                    <span class="block text-sm font-bold text-slate-800">อาคารโดมเอนกประสงค์</span>
+                    <span class="block text-xs text-slate-500">ความจุ ~1,000 คน (ลานโดม)</span>
+                  </div>
+                </label>
+
+                <label class="flex items-start p-3 border border-slate-200 rounded-xl hover:bg-blue-50/50 cursor-pointer transition">
+                  <input type="radio" name="roomName" value="ห้องประชุม (กาแฟ)" required onchange="triggerAvailabilityCheck()" class="mt-1 text-brand-600 focus:ring-brand-500">
+                  <div class="ml-3">
+                    <span class="block text-sm font-bold text-slate-800">ห้องประชุม (กาแฟ)</span>
+                    <span class="block text-xs text-slate-500">ความจุ ~25 คน (วิทยบริการ)</span>
+                  </div>
+                </label>
+
+                <label class="flex items-start p-3 border border-slate-200 rounded-xl hover:bg-blue-50/50 cursor-pointer transition">
+                  <input type="radio" name="roomName" value="ห้องประชุมหน้าห้องผู้อำนวยการ" required onchange="triggerAvailabilityCheck()" class="mt-1 text-brand-600 focus:ring-brand-500">
+                  <div class="ml-3">
+                    <span class="block text-sm font-bold text-slate-800">ห้องประชุมหน้าห้อง ผอ.</span>
+                    <span class="block text-xs text-slate-500">ความจุ ~20 คน (ห้องรับรอง)</span>
+                  </div>
+                </label>
+
+                <label class="flex items-start p-3 border border-slate-200 rounded-xl hover:bg-blue-50/50 cursor-pointer transition">
+                  <input type="radio" name="roomName" value="ห้องคอมพิวเตอร์กลาง (ห้องโสต)" required onchange="triggerAvailabilityCheck()" class="mt-1 text-brand-600 focus:ring-brand-500">
+                  <div class="ml-3">
+                    <span class="block text-sm font-bold text-slate-800">ห้องคอมฯ กลาง (โสต)</span>
+                    <span class="block text-xs text-slate-500">ความจุ ~50 คน (คอมพิวเตอร์)</span>
+                  </div>
+                </label>
+
+                <label class="flex items-start p-3 border border-slate-200 rounded-xl hover:bg-blue-50/50 cursor-pointer transition sm:col-span-2 md:col-span-3">
+                  <input type="radio" name="roomName" value="อื่นๆ" required onchange="triggerAvailabilityCheck()" class="mt-1 text-brand-600 focus:ring-brand-500">
+                  <div class="ml-3">
+                    <span class="block text-sm font-bold text-slate-800">อื่นๆ</span>
+                    <span class="block text-xs text-slate-500">โปรดระบุในช่องหมายเหตุเพิ่มเติม</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. กำหนดการวันเวลาและจำนวนผู้เข้าใช้ -->
+          <div class="space-y-4">
+            <div class="flex items-center space-x-2 border-b border-slate-200 pb-2">
+              <span class="w-7 h-7 rounded-full bg-brand-800 text-white flex items-center justify-center font-bold text-xs">3</span>
+              <h3 class="font-bold text-slate-800 font-kanit text-lg">กำหนดการและจำนวนผู้เข้าใช้</h3>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <label class="block text-sm font-semibold mb-1 text-slate-700">วันที่เริ่มต้น <span class="text-rose-500">*</span></label>
+                <input type="date" id="form-start-date" name="startDate" required onchange="syncEndDate(); triggerAvailabilityCheck()" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-brand-500 focus:outline-none text-sm">
+              </div>
+              <div>
+                <label class="block text-sm font-semibold mb-1 text-slate-700">เวลาเริ่มต้น <span class="text-rose-500">*</span></label>
+                <input type="time" id="form-start-time" name="startTime" value="08:30" required onchange="triggerAvailabilityCheck()" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-brand-500 focus:outline-none text-sm">
+              </div>
+              <div>
+                <label class="block text-sm font-semibold mb-1 text-slate-700">วันที่สิ้นสุด <span class="text-rose-500">*</span></label>
+                <input type="date" id="form-end-date" name="endDate" required onchange="triggerAvailabilityCheck()" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-brand-500 focus:outline-none text-sm">
+              </div>
+              <div>
+                <label class="block text-sm font-semibold mb-1 text-slate-700">เวลาสิ้นสุด <span class="text-rose-500">*</span></label>
+                <input type="time" id="form-end-time" name="endTime" value="16:30" required onchange="triggerAvailabilityCheck()" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-brand-500 focus:outline-none text-sm">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold mb-1 text-slate-700">จำนวนผู้เข้าใช้โดยประมาณ (คน) <span class="text-rose-500">*</span></label>
+              <input type="number" name="attendeeCount" min="1" required placeholder="เช่น 45" class="w-full sm:w-1/2 px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-brand-500 focus:outline-none text-sm">
+            </div>
+
+            <!-- Conflict Checker Alert Box -->
+            <div id="availability-status-box" class="hidden p-4 rounded-xl border text-sm transition-all duration-300">
+              <!-- Result of conflict checking will show here -->
+            </div>
+          </div>
+
+          <!-- 4. ครุภัณฑ์และสิ่งอำนวยความสะดวก -->
+          <div class="space-y-4">
+            <div class="flex items-center space-x-2 border-b border-slate-200 pb-2">
+              <span class="w-7 h-7 rounded-full bg-brand-800 text-white flex items-center justify-center font-bold text-xs">4</span>
+              <h3 class="font-bold text-slate-800 font-kanit text-lg">ครุภัณฑ์และสิ่งอำนวยความสะดวกที่ขอใช้ (เลือกได้หลายข้อ)</h3>
+            </div>
+            
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <label class="flex items-center space-x-2.5 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+                <input type="checkbox" name="equipments" value="เครื่องฉายภาพ (Projector)" class="rounded text-brand-600 focus:ring-brand-500">
+                <span class="text-sm font-medium">เครื่องฉายภาพ (Projector)</span>
+              </label>
+
+              <label class="flex items-center space-x-2.5 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+                <input type="checkbox" name="equipments" value="ระบบเสียง" class="rounded text-brand-600 focus:ring-brand-500">
+                <span class="text-sm font-medium">ระบบเสียง</span>
+              </label>
+
+              <label class="flex items-center space-x-2.5 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+                <input type="checkbox" name="equipments" value="ไมโครโฟน" class="rounded text-brand-600 focus:ring-brand-500">
+                <span class="text-sm font-medium">ไมโครโฟน</span>
+              </label>
+
+              <label class="flex items-center space-x-2.5 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+                <input type="checkbox" name="equipments" value="เครื่องปรับอากาศ" checked class="rounded text-brand-600 focus:ring-brand-500">
+                <span class="text-sm font-medium">เครื่องปรับอากาศ</span>
+              </label>
+
+              <label class="flex items-center space-x-2.5 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+                <input type="checkbox" name="equipments" value="อินเทอร์เน็ต" checked class="rounded text-brand-600 focus:ring-brand-500">
+                <span class="text-sm font-medium">อินเทอร์เน็ต / Wi-Fi</span>
+              </label>
+
+              <label class="flex items-center space-x-2.5 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+                <input type="checkbox" name="equipments" value="โต๊ะ/เก้าอี้เพิ่มเติม" class="rounded text-brand-600 focus:ring-brand-500">
+                <span class="text-sm font-medium">โต๊ะ/เก้าอี้เพิ่มเติม</span>
+              </label>
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold mb-1 text-slate-700">สิ่งอำนวยความสะดวกหรืออุปกรณ์อื่นๆ เพิ่มเติม (ถ้ามี)</label>
+              <input type="text" name="otherEquipment" placeholder="เช่น โพเดียม, สาย HDMI, ชุดรับรองน้ำดื่ม..." class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-brand-500 focus:outline-none text-sm">
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold mb-1 text-slate-700">หมายเหตุเพิ่มเติม</label>
+              <textarea name="remarks" rows="2" placeholder="ข้อมูลเพิ่มเติมที่ต้องการแจ้งเจ้าหน้าที่..." class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-brand-500 focus:outline-none text-sm"></textarea>
+            </div>
+          </div>
+
+          <!-- 5. สายการพิจารณาและตรวจสอบ (Approval Route Info Box) -->
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-2">
+            <h4 class="font-bold text-slate-700 font-kanit flex items-center space-x-1.5 text-sm">
+              <i class="fa-solid fa-route text-brand-600"></i>
+              <span>สายการพิจารณาและตรวจสอบตามระเบียบวิทยาลัย:</span>
+            </h4>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+              <div class="p-2.5 bg-white rounded-lg border border-slate-200">
+                <p class="font-semibold text-slate-800">1. หัวหน้างาน / ผู้รับรอง</p>
+                <p class="text-brand-700">นายเอกราช เขียวทอง</p>
+                <p class="text-[11px] text-slate-500">หัวหน้างานศูนย์ดิจิทัลและสื่อสารองค์กร</p>
+              </div>
+              <div class="p-2.5 bg-white rounded-lg border border-slate-200">
+                <p class="font-semibold text-slate-800">2. จนท. ผู้ตรวจสอบห้อง</p>
+                <p class="text-brand-700">นายวัชรพงศ์ โสภา</p>
+                <p class="text-[11px] text-slate-500">เจ้าหน้าที่งานศูนย์ดิจิทัลและสื่อสารองค์กร</p>
+              </div>
+              <div class="p-2.5 bg-white rounded-lg border border-slate-200">
+                <p class="font-semibold text-slate-800">3. ผู้พิจารณาอนุมัติ</p>
+                <p class="text-brand-700">นายชาตรี เริงชัยภูมิ</p>
+                <p class="text-[11px] text-slate-500">รอง ผอ. ฝ่ายพัฒนายุทธศาสตร์และแผนงาน</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Form Action Buttons -->
+          <div class="pt-4 flex flex-col sm:flex-row items-center justify-end gap-3 font-kanit">
+            <button type="reset" class="w-full sm:w-auto px-6 py-2.5 border border-slate-300 rounded-xl text-slate-600 hover:bg-slate-100 font-medium transition text-sm">
+              ล้างข้อมูล
+            </button>
+            <button type="submit" id="btn-submit-booking" class="w-full sm:w-auto px-8 py-2.5 bg-brand-800 hover:bg-brand-900 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition text-sm flex items-center justify-center space-x-2">
+              <i class="fa-solid fa-paper-plane"></i>
+              <span>บันทึกและส่งคำขอจอง</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- TAB 4: APPROVAL WORKFLOW -->
+    <section id="tab-approval" class="space-y-6 hidden">
+      <!-- Workflow Hub Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-800">สายการพิจารณาและตรวจสอบคำขอ (Approval Workflow)</h2>
+          <p class="text-xs sm:text-sm text-slate-500">สำหรับคณะกรรมการและผู้มีอำนาจลงนามทั้ง 3 ระดับ</p>
+        </div>
+
+        <!-- Filter / Role Switcher -->
+        <div class="flex items-center space-x-2 bg-white p-1 rounded-xl border border-slate-200 text-xs font-medium">
+          <button onclick="filterApprovalRole('all')" id="role-filter-all" class="px-3 py-1.5 rounded-lg bg-brand-800 text-white font-bold transition">ทั้งหมด</button>
+          <button onclick="filterApprovalRole('step1')" id="role-filter-step1" class="px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-100 transition">1. รับรองคำขอ</button>
+          <button onclick="filterApprovalRole('step2')" id="role-filter-step2" class="px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-100 transition">2. ตรวจสอบห้อง</button>
+          <button onclick="filterApprovalRole('step3')" id="role-filter-step3" class="px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-100 transition">3. พิจารณาอนุมัติ</button>
+        </div>
+      </div>
+
+      <!-- Approvers Info Banner -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-blue-50/70 border border-blue-200 rounded-xl p-4 flex items-start space-x-3">
+          <div class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
+            1
+          </div>
+          <div>
+            <span class="text-xs font-semibold text-blue-800 block">หัวหน้างาน / ผู้รับรอง</span>
+            <p class="font-bold text-slate-800 text-sm">นายเอกราช เขียวทอง</p>
+            <p class="text-[11px] text-slate-500">หัวหน้างานศูนย์ดิจิทัลและสื่อสารองค์กร</p>
+          </div>
+        </div>
+
+        <div class="bg-teal-50/70 border border-teal-200 rounded-xl p-4 flex items-start space-x-3">
+          <div class="w-10 h-10 rounded-full bg-teal-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
+            2
+          </div>
+          <div>
+            <span class="text-xs font-semibold text-teal-800 block">เจ้าหน้าที่ผู้ตรวจสอบห้อง</span>
+            <p class="font-bold text-slate-800 text-sm">นายวัชรพงศ์ โสภา</p>
+            <p class="text-[11px] text-slate-500">เจ้าหน้าที่งานศูนย์ดิจิทัลและสื่อสารองค์กร</p>
+          </div>
+        </div>
+
+        <div class="bg-purple-50/70 border border-purple-200 rounded-xl p-4 flex items-start space-x-3">
+          <div class="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
+            3
+          </div>
+          <div>
+            <span class="text-xs font-semibold text-purple-800 block">ผู้พิจารณาอนุมัติ</span>
+            <p class="font-bold text-slate-800 text-sm">นายชาตรี เริงชัยภูมิ</p>
+            <p class="text-[11px] text-slate-500">รอง ผอ. ฝ่ายพัฒนายุทธศาสตร์และแผนงาน</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Requests Pending List -->
+      <div id="approval-cards-container" class="space-y-4">
+        <!-- Render approval cards dynamically -->
+      </div>
+    </section>
+
+    <!-- TAB 5: REPORTS & EXPORT -->
+    <section id="tab-reports" class="space-y-6 hidden">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-800">ระบบรายงานและสถิติการใช้งาน</h2>
+          <p class="text-xs sm:text-sm text-slate-500">สรุปการใช้ห้องประชุมตามช่วงเวลา หน่วยงาน และออกรายงานทางการ</p>
+        </div>
+
+        <!-- Export Buttons -->
+        <div class="flex items-center space-x-2">
+          <button onclick="exportTableToCSV('meeting-bookings-report.csv')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm">
+            <i class="fa-solid fa-file-excel"></i>
+            <span>ส่งออก CSV (Excel)</span>
+          </button>
+          <button onclick="printReportSummary()" class="px-4 py-2 bg-brand-800 hover:bg-brand-900 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm">
+            <i class="fa-solid fa-print"></i>
+            <span>พิมพ์รายงานสรุป</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Charts Summary -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <h3 class="font-bold text-slate-800 text-base mb-4 flex items-center space-x-2">
+            <i class="fa-solid fa-chart-pie text-brand-600"></i>
+            <span>สัดส่วนการใช้งานแต่ละห้องประชุม</span>
+          </h3>
+          <div class="h-64 flex items-center justify-center">
+            <canvas id="roomUsageChart"></canvas>
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <h3 class="font-bold text-slate-800 text-base mb-4 flex items-center space-x-2">
+            <i class="fa-solid fa-chart-column text-indigo-600"></i>
+            <span>สถิติการขอใช้แยกตามหน่วยงาน / แผนก</span>
+          </h3>
+          <div class="h-64 flex items-center justify-center">
+            <canvas id="departmentChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filterable Full Table -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <!-- Filters Toolbar -->
+        <div class="p-4 sm:p-6 bg-slate-50/50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4">
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="relative">
+              <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+              <input type="text" id="report-search" oninput="filterReportTable()" placeholder="ค้นหาชื่อ, แผนก, วัตถุประสงค์..." class="pl-9 pr-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 w-48 sm:w-64">
+            </div>
+
+            <select id="report-room-filter" onchange="filterReportTable()" class="text-xs bg-white border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none">
+              <option value="all">ทุกห้องประชุม</option>
+              <option value="หอประชุมอดิเรกสาร">หอประชุมอดิเรกสาร</option>
+              <option value="ห้องประชุมสักทอง">ห้องประชุมสักทอง</option>
+              <option value="อาคารโดมเอนกประสงค์">อาคารโดมเอนกประสงค์</option>
+              <option value="ห้องประชุม (กาแฟ)">ห้องประชุม (กาแฟ)</option>
+              <option value="ห้องประชุมหน้าห้องผู้อำนวยการ">ห้องประชุมหน้าห้องผู้อำนวยการ</option>
+              <option value="ห้องคอมพิวเตอร์กลาง (ห้องโสต)">ห้องคอมฯ กลาง (โสต)</option>
+              <option value="อื่นๆ">อื่นๆ</option>
+            </select>
+
+            <select id="report-status-filter" onchange="filterReportTable()" class="text-xs bg-white border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none">
+              <option value="all">ทุกสถานะ</option>
+              <option value="อนุมัติเรียบร้อย">อนุมัติเรียบร้อย</option>
+              <option value="ห้องพร้อม-รออนุมัติ">ห้องพร้อม-รออนุมัติ</option>
+              <option value="รอตรวจสอบ">รอตรวจสอบ</option>
+              <option value="ไม่อนุมัติ">ไม่อนุมัติ</option>
+            </select>
+          </div>
+
+          <div class="text-xs text-slate-500">
+            พบทั้งหมด <span id="report-record-count" class="font-bold text-slate-800">0</span> รายการ
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table id="report-table" class="w-full text-xs text-left">
+            <thead class="text-slate-500 bg-slate-50 uppercase border-b border-slate-200">
+              <tr>
+                <th class="px-4 py-3">รหัสการจอง</th>
+                <th class="px-4 py-3">วันที่ใช้</th>
+                <th class="px-4 py-3">เวลา</th>
+                <th class="px-4 py-3">ห้องประชุม</th>
+                <th class="px-4 py-3">วัตถุประสงค์</th>
+                <th class="px-4 py-3">ผู้ขอใช้</th>
+                <th class="px-4 py-3">หน่วยงาน</th>
+                <th class="px-4 py-3">สถานะ</th>
+                <th class="px-4 py-3 text-center">พิมพ์ใบคำขอ</th>
+              </tr>
+            </thead>
+            <tbody id="report-tbody" class="divide-y divide-slate-100">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="bg-white border-t border-slate-200 py-6 mt-12 text-center text-xs text-slate-500 font-sarabun no-print">
+    <div class="max-w-7xl mx-auto px-4">
+      <p class="font-semibold text-slate-700">วิทยาลัยเทคนิคท่าหลวงซิเมนต์ไทยอนุสรณ์</p>
+      <p class="mt-1">ศูนย์ดิจิทัลและสื่อสารองค์กร | ระบบจองห้องประชุมออนไลน์ เชื่อมต่อฐานข้อมูล Google Sheets</p>
+      <p class="text-[11px] text-slate-400 mt-2">© 2026 Thaluang Cementhai Anusorn Technical College. All Rights Reserved.</p>
+    </div>
+  </footer>
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- Modal 1: Booking Details & Workflow View -->
+  <div id="modal-details" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200">
+      <div class="sticky top-0 bg-white px-6 py-4 border-b border-slate-100 flex items-center justify-between z-10">
+        <div class="flex items-center space-x-2">
+          <span class="w-3 h-3 rounded-full bg-brand-600"></span>
+          <h3 class="font-bold text-slate-800 font-kanit">รายละเอียดคำขอใช้ห้องประชุม</h3>
+        </div>
+        <button onclick="closeModal('modal-details')" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div id="modal-details-content" class="p-6 space-y-6 text-sm font-sarabun text-slate-700">
+        <!-- Rendered by JS -->
+      </div>
+
+      <div class="sticky bottom-0 bg-slate-50 px-6 py-3 border-t border-slate-200 flex items-center justify-between">
+        <button id="modal-print-btn" onclick="printOfficialForm(currentSelectedBookingId)" class="px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 font-kanit">
+          <i class="fa-solid fa-print"></i>
+          <span>พิมพ์ใบขอใช้ห้องประชุมราชการ</span>
+        </button>
+        <button onclick="closeModal('modal-details')" class="px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-semibold transition font-kanit">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Configuration / Google Apps Script Setup -->
+  <div id="modal-config" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center space-x-2">
+          <i class="fa-solid fa-plug text-brand-600 text-lg"></i>
+          <h3 class="font-bold text-slate-800 font-kanit">ตั้งค่าการเชื่อมต่อ Google Sheets</h3>
+        </div>
+        <button onclick="closeModal('modal-config')" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="text-xs space-y-3 font-sarabun text-slate-600">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Google Spreadsheet URL / ID:</label>
+          <input type="text" id="cfg-sheet-url" readonly value="https://docs.google.com/spreadsheets/d/1Ap5fdiPYEs8LhEEfAUmQRVaDK9k0D_m_ZyovxPCgk3k/edit" class="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-600 font-mono text-[11px]">
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Google Apps Script Web App URL (สำหรับการ Deploy เชื่อมต่อจริง):</label>
+          <input type="url" id="cfg-webapp-url" placeholder="https://script.google.com/macros/s/AKfycbx.../exec" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 font-mono text-xs">
+          <p class="text-[11px] text-slate-400 mt-1">* หากเว้นว่างไว้ ระบบจะใช้ข้อมูลจำลอง (Demo Mode) สำหรับการทดสอบ</p>
+        </div>
+
+        <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-800">
+          <p class="font-bold mb-1">คำแนะนำการติดตั้ง:</p>
+          <ol class="list-decimal list-inside space-y-0.5 text-[11px]">
+            <li>เปิด Spreadsheet แล้วไปที่เมนู <strong>ส่วนขยาย > Apps Script</strong></li>
+            <li>วางโค้ดจากไฟล์ <code>Code.gs</code> และ <code>index.html</code></li>
+            <li>กด <strong>การทำให้ใช้งานได้ (Deploy) > การทำให้ใช้งานได้รายการใหม่</strong></li>
+            <li>เลือกผู้มีสิทธิ์เข้าถึงเป็น <strong>ทุกคน (Anyone)</strong> และคัดลอก URL มาใส่ที่นี่</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end space-x-2 pt-2 font-kanit">
+        <button onclick="closeModal('modal-config')" class="px-4 py-2 border border-slate-300 rounded-xl text-xs font-semibold text-slate-600">ยกเลิก</button>
+        <button onclick="saveConfig()" class="px-5 py-2 bg-brand-800 hover:bg-brand-900 text-white rounded-xl text-xs font-bold shadow">บันทึกการตั้งค่า</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= PRINTABLE AREA (OFFICIAL REQUEST FORM) ================= -->
+  <div id="printable-area" class="print-only p-8 bg-white text-black font-sarabun leading-relaxed">
+    <div id="printable-content">
+      <!-- Generated when clicking print -->
+    </div>
+  </div>
+
+  <!-- ================= JAVASCRIPT APPLICATION LOGIC ================= -->
+  <script>
+    // Global Constants & State
+    const SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1Ap5fdiPYEs8LhEEfAUmQRVaDK9k0D_m_ZyovxPCgk3k/edit";
+    const SPREADSHEET_ID = "1Ap5fdiPYEs8LhEEfAUmQRVaDK9k0D_m_ZyovxPCgk3k";
+    
+    let currentSelectedBookingId = null;
+    let webAppUrl = localStorage.getItem("thaluang_webapp_url") || "";
+    let activeTab = 'dashboard';
+    let currentCalendarDate = new Date();
+    let roomUsageChartInstance = null;
+    let departmentChartInstance = null;
+
+    // Room Metadata
+    const ROOMS = [
+      { id: "R01", name: "หอประชุมอดิเรกสาร", capacity: 500, location: "อาคารอำนวยการ ชั้น 3", icon: "fa-users-line", color: "from-blue-600 to-indigo-700" },
+      { id: "R02", name: "ห้องประชุมสักทอง", capacity: 80, location: "อาคาร 2 ชั้น 2", icon: "fa-award", color: "from-amber-600 to-orange-700" },
+      { id: "R03", name: "อาคารโดมเอนกประสงค์", capacity: 1000, location: "ลานกิจกรรมกลาง", icon: "fa-shapes", color: "from-emerald-600 to-teal-700" },
+      { id: "R04", name: "ห้องประชุม (กาแฟ)", capacity: 25, location: "อาคารวิทยบริการ ชั้น 1", icon: "fa-mug-hot", color: "from-rose-600 to-pink-700" },
+      { id: "R05", name: "ห้องประชุมหน้าห้องผู้อำนวยการ", capacity: 20, location: "อาคารอำนวยการ ชั้น 2", icon: "fa-user-tie", color: "from-purple-600 to-indigo-800" },
+      { id: "R06", name: "ห้องคอมพิวเตอร์กลาง (ห้องโสต)", capacity: 50, location: "ศูนย์วิทยบริการและดิจิทัล", icon: "fa-desktop", color: "from-cyan-600 to-blue-700" },
+      { id: "R07", name: "อื่นๆ", capacity: 50, location: "ตามระบุในคำขอ", icon: "fa-ellipsis", color: "from-slate-600 to-slate-700" }
+    ];
+
+    // Mock initial bookings for demonstration & fallback
+    let bookingsData = [
+      {
+        BookingID: "TL-20261028-001",
+        Timestamp: "2026-10-27 09:30:00",
+        FullName: "นายเอกชัย เจริญผล",
+        Position: "หัวหน้าแผนกวิชาช่างยนต์",
+        Department: "แผนกวิชาช่างยนต์",
+        Phone: "081-999-8877",
+        Objective: "ประชุมเตรียมความพร้อมแข่งขันทักษะวิชาชีพ ประจำปีการศึกษา 2569",
+        RoomName: "ห้องประชุมสักทอง",
+        StartDate: "2026-10-28",
+        EndDate: "2026-10-28",
+        StartTime: "09:00",
+        EndTime: "12:00",
+        AttendeeCount: 45,
+        Equipments: "เครื่องฉายภาพ (Projector), ระบบเสียง, ไมโครโฟน, เครื่องปรับอากาศ",
+        OtherEquipment: "โพเดียมและชุดต่อสัญญาณ HDMI",
+        Remarks: "จัดโต๊ะประชุมแบบ U-Shape",
+        Step1_Certifier_Name: "นายเอกราช เขียวทอง (หัวหน้างานศูนย์ดิจิทัลและสื่อสารองค์กร)",
+        Step1_Status: "รับรองแล้ว",
+        Step1_Timestamp: "2026-10-27 10:15:00",
+        Step2_Inspector_Name: "นายวัชรพงศ์ โสภา (เจ้าหน้าที่งานศูนย์ดิจิทัลและสื่อสารองค์กร)",
+        Step2_RoomStatus: "พร้อมใช้งาน",
+        Step2_Note: "ระบบภาพและเสียงทดสอบเรียบร้อย แอร์เย็นปกติ",
+        Step2_Timestamp: "2026-10-27 14:00:00",
+        Step3_Approver_Name: "นายชาตรี เริงชัยภูมิ (รองผู้อำนวยการฝ่ายพัฒนายุทธศาสตร์และแผนงาน)",
+        Step3_Status: "อนุมัติ",
+        Step3_Note: "อนุมัติตามระเบียบ ขอให้ดูแลความสะอาดหลังเสร็จสิ้น",
+        Step3_Timestamp: "2026-10-27 16:30:00",
+        Overall_Status: "อนุมัติเรียบร้อย"
+      },
+      {
+        BookingID: "TL-20261028-002",
+        Timestamp: "2026-10-28 08:15:00",
+        FullName: "นางสาวศิริพร บุญยืน",
+        Position: "ครูแผนกสามัญสัมพันธ์",
+        Department: "แผนกสามัญสัมพันธ์",
+        Phone: "089-123-4567",
+        Objective: "อบรมเชิงปฏิบัติการการใช้สื่อเทคโนโลยีดิจิทัลในการจัดการเรียนรู้",
+        RoomName: "ห้องคอมพิวเตอร์กลาง (ห้องโสต)",
+        StartDate: "2026-10-28",
+        EndDate: "2026-10-28",
+        StartTime: "13:00",
+        EndTime: "16:30",
+        AttendeeCount: 35,
+        Equipments: "เครื่องฉายภาพ (Projector), ไมโครโฟน, เครื่องปรับอากาศ, อินเทอร์เน็ต",
+        OtherEquipment: "",
+        Remarks: "ต้องการให้เปิดระบบอินเทอร์เน็ตความเร็วสูงทุกเครื่อง",
+        Step1_Certifier_Name: "นายเอกราช เขียวทอง (หัวหน้างานศูนย์ดิจิทัลและสื่อสารองค์กร)",
+        Step1_Status: "รับรองแล้ว",
+        Step1_Timestamp: "2026-10-28 08:45:00",
+        Step2_Inspector_Name: "นายวัชรพงศ์ โสภา (เจ้าหน้าที่งานศูนย์ดิจิทัลและสื่อสารองค์กร)",
+        Step2_RoomStatus: "พร้อมใช้งาน",
+        Step2_Note: "เครื่องคอมพิวเตอร์พร้อมใช้งาน 40 เครื่อง",
+        Step2_Timestamp: "2026-10-28 09:10:00",
+        Step3_Approver_Name: "นายชาตรี เริงชัยภูมิ (รองผู้อำนวยการฝ่ายพัฒนายุทธศาสตร์และแผนงาน)",
+        Step3_Status: "รอการอนุมัติ",
+        Step3_Note: "",
+        Step3_Timestamp: "",
+        Overall_Status: "ห้องพร้อม-รออนุมัติ"
+      },
+      {
+        BookingID: "TL-20261029-001",
+        Timestamp: "2026-10-28 09:00:00",
+        FullName: "นายพิพัฒน์ วรรณดี",
+        Position: "หัวหน้างานแนะแนวอาชีพ",
+        Department: "งานแนะแนวอาชีพและจัดหางาน",
+        Phone: "084-567-8901",
+        Objective: "ปฐมนิเทศนักศึกษาฝึกงานและเตรียมความพร้อมสู่สถานประกอบการ",
+        RoomName: "หอประชุมอดิเรกสาร",
+        StartDate: "2026-10-29",
+        EndDate: "2026-10-29",
+        StartTime: "08:30",
+        EndTime: "16:30",
+        AttendeeCount: 350,
+        Equipments: "เครื่องฉายภาพ (Projector), ระบบเสียง, ไมโครโฟน, เครื่องปรับอากาศ, โต๊ะ/เก้าอี้เพิ่มเติม",
+        OtherEquipment: "เก้าอี้เสริม 100 ตัว",
+        Remarks: "",
+        Step1_Certifier_Name: "นายเอกราช เขียวทอง (หัวหน้างานศูนย์ดิจิทัลและสื่อสารองค์กร)",
+        Step1_Status: "รอการรับรอง",
+        Step1_Timestamp: "",
+        Step2_Inspector_Name: "นายวัชรพงศ์ โสภา (เจ้าหน้าที่งานศูนย์ดิจิทัลและสื่อสารองค์กร)",
+        Step2_RoomStatus: "รอการตรวจสอบ",
+        Step2_Note: "",
+        Step2_Timestamp: "",
+        Step3_Approver_Name: "นายชาตรี เริงชัยภูมิ (รองผู้อำนวยการฝ่ายพัฒนายุทธศาสตร์และแผนงาน)",
+        Step3_Status: "รอการอนุมัติ",
+        Step3_Note: "",
+        Step3_Timestamp: "",
+        Overall_Status: "รอตรวจสอบ"
+      }
+    ];
+
+    // ================= INITIALIZATION =================
+    document.addEventListener("DOMContentLoaded", () => {
+      // ตั้งค่าวันปัจจุบันใน Form
+      const todayStr = getTodayYMD();
+      document.getElementById("form-start-date").value = todayStr;
+      document.getElementById("form-end-date").value = todayStr;
+      document.getElementById("form-start-date").min = todayStr;
+      document.getElementById("form-end-date").min = todayStr;
+      document.getElementById("cfg-webapp-url").value = webAppUrl;
+
+      // แสดงวันที่ส่วนต่างๆ
+      const dateDisplayOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      document.getElementById("today-date-display").textContent = new Date().toLocaleDateString('th-TH', dateDisplayOptions);
+
+      // โหลดข้อมูล
+      refreshData();
+      
+      // Auto-refresh ทุก 45 วินาที
+      setInterval(() => {
+        refreshData(false);
+      }, 45000);
+    });
+
+    function getTodayYMD() {
+      const d = new Date();
+      const month = '' + (d.getMonth() + 1);
+      const day = '' + d.getDate();
+      const year = d.getFullYear();
+      return [year, month.padStart(2, '0'), day.padStart(2, '0')].join('-');
+    }
+
+    function syncEndDate() {
+      const s = document.getElementById("form-start-date").value;
+      const e = document.getElementById("form-end-date");
+      e.min = s;
+      if (e.value < s) {
+        e.value = s;
+      }
+    }
+
+    // ================= DATA FETCH & SYNC =================
+    async function refreshData(showToast = false) {
+      const timeStr = new Date().toLocaleTimeString('th-TH');
+      document.getElementById("last-updated-time").textContent = `อัปเดตล่าสุด: ${timeStr}`;
+
+      if (webAppUrl && webAppUrl.trim() !== "") {
+        try {
+          const res = await fetch(`${webAppUrl}?action=getBookings`);
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+            bookingsData = json.data;
+            document.getElementById("status-mode-text").innerHTML = `<span class="text-emerald-700 font-bold">Google Sheets Real-time</span> (${bookingsData.length} รายการ)`;
+            document.getElementById("connection-dot").className = "absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border border-brand-900";
+          }
+        } catch (e) {
+          console.warn("Could not fetch from WebApp URL, using local state: ", e);
+          document.getElementById("status-mode-text").innerHTML = `<span class="text-amber-700 font-bold">Demo / Cached State</span> (Spreadsheet ID: 1Ap5...k3k)`;
+        }
+      } else {
+        document.getElementById("status-mode-text").innerHTML = `<span class="text-blue-700 font-bold">โหมดทดสอบ (Demo Mode)</span> เชื่อมต่อฐานข้อมูลชีต 1Ap5...k3k`;
+      }
+
+      // Re-render components
+      renderDashboard();
+      renderRoomCards();
+      renderTodaySchedule();
+      renderCalendar();
+      renderApprovalHub();
+      renderReportTable();
+      updateCharts();
+
+      if (showToast) {
+        Swal.fire({
+          icon: 'success',
+          title: 'อัปเดตข้อมูลล่าสุดเรียบร้อย',
+          timer: 1500,
+          showConfirmButton: false,
+          toast: true,
+          position: 'top-end'
+        });
+      }
+    }
+
+    // ================= TAB NAVIGATION =================
+    function switchTab(tabId) {
+      activeTab = tabId;
+      const tabs = ['dashboard', 'calendar', 'booking', 'approval', 'reports'];
+      tabs.forEach(t => {
+        const section = document.getElementById(`tab-${t}`);
+        const navBtn = document.getElementById(`nav-${t}`);
+        if (t === tabId) {
+          section.classList.remove('hidden');
+          if (navBtn) {
+            navBtn.classList.remove('text-slate-200', 'hover:bg-white/10');
+            navBtn.classList.add('bg-white/20', 'text-white');
+          }
+        } else {
+          section.classList.add('hidden');
+          if (navBtn) {
+            navBtn.classList.remove('bg-white/20', 'text-white');
+            navBtn.classList.add('text-slate-200', 'hover:bg-white/10');
+          }
+        }
+      });
+
+      if (tabId === 'calendar') {
+        renderCalendar();
+      } else if (tabId === 'reports') {
+        setTimeout(updateCharts, 100);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobile-menu');
+      menu.classList.toggle('hidden');
+    }
+
+    // ================= DASHBOARD RENDERING =================
+    function renderDashboard() {
+      const today = getTodayYMD();
+      let todayCount = 0;
+      let approvedCount = 0;
+      let pendingCount = 0;
+
+      bookingsData.forEach(b => {
+        if (b.StartDate <= today && b.EndDate >= today && b.Overall_Status !== "ยกเลิก" && b.Overall_Status !== "ไม่อนุมัติ") {
+          todayCount++;
+        }
+        if (b.Overall_Status === "อนุมัติเรียบร้อย") {
+          approvedCount++;
+        } else if (b.Overall_Status === "รอตรวจสอบ" || b.Overall_Status === "รับรองแล้ว-รอตรวจห้อง" || b.Overall_Status === "ห้องพร้อม-รออนุมัติ") {
+          pendingCount++;
+        }
+      });
+
+      document.getElementById("stat-today").textContent = todayCount;
+      document.getElementById("stat-approved").textContent = approvedCount;
+      document.getElementById("stat-pending").textContent = pendingCount;
+      document.getElementById("stat-rooms").textContent = ROOMS.length - 1 + "+";
+
+      // Badge on navbar
+      const pBadge = document.getElementById("pending-badge");
+      if (pendingCount > 0) {
+        pBadge.textContent = pendingCount;
+        pBadge.classList.remove("hidden");
+      } else {
+        pBadge.classList.add("hidden");
+      }
+    }
+
+    function renderRoomCards() {
+      const container = document.getElementById("room-cards-container");
+      container.innerHTML = "";
+      const today = getTodayYMD();
+
+      ROOMS.forEach(room => {
+        if (room.name === "อื่นๆ") return;
+
+        // Check if room is in use right now/today
+        const activeToday = bookingsData.filter(b => 
+          b.RoomName === room.name &&
+          b.StartDate <= today && b.EndDate >= today &&
+          b.Overall_Status !== "ยกเลิก" && b.Overall_Status !== "ไม่อนุมัติ"
+        );
+
+        const isBusy = activeToday.length > 0;
+        const currentBooking = activeToday[0];
+
+        const card = document.createElement("div");
+        card.className = "bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between";
+        card.innerHTML = `
+          <div>
+            <div class="flex items-start justify-between">
+              <div class="w-12 h-12 rounded-xl bg-gradient-to-br ${room.color} text-white flex items-center justify-center text-xl shadow-md">
+                <i class="fa-solid ${room.icon}"></i>
+              </div>
+              <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${isBusy ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'} flex items-center space-x-1">
+                <span class="w-2 h-2 rounded-full ${isBusy ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}"></span>
+                <span>${isBusy ? 'มีการใช้งานวันนี้' : 'ห้องว่าง'}</span>
+              </span>
+            </div>
+
+            <div class="mt-4">
+              <h4 class="font-bold text-slate-800 text-base font-kanit">${room.name}</h4>
+              <p class="text-xs text-slate-500 mt-0.5"><i class="fa-solid fa-location-dot mr-1 text-slate-400"></i>${room.location}</p>
+            </div>
+
+            <div class="mt-3 py-2 border-t border-b border-slate-100 flex items-center justify-between text-xs text-slate-600">
+              <span><i class="fa-solid fa-users text-slate-400 mr-1"></i>ความจุ ~${room.capacity} คน</span>
+              <span><i class="fa-solid fa-check text-emerald-500 mr-1"></i>พร้อมใช้งาน</span>
+            </div>
+
+            ${isBusy ? `
+              <div class="mt-3 p-2.5 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900">
+                <div class="font-bold truncate">${currentBooking.Objective}</div>
+                <div class="text-[11px] text-amber-700 mt-0.5">${currentBooking.StartTime} - ${currentBooking.EndTime} น. (${currentBooking.Department})</div>
+              </div>
+            ` : `
+              <div class="mt-3 p-2.5 bg-slate-50 rounded-xl text-xs text-slate-400 text-center">
+                ไม่มีวาระการใช้งานที่บันทึกไว้ในวันนี้
+              </div>
+            `}
+          </div>
+
+          <div class="mt-4 pt-2">
+            <button onclick="quickBookRoom('${room.name}')" class="w-full py-2 bg-slate-100 hover:bg-brand-50 hover:text-brand-700 text-slate-700 rounded-xl text-xs font-semibold transition flex items-center justify-center space-x-1">
+              <i class="fa-solid fa-calendar-plus"></i>
+              <span>จองห้องนี้</span>
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderTodaySchedule() {
+      const tbody = document.getElementById("today-schedule-tbody");
+      const today = getTodayYMD();
+
+      const todayList = bookingsData.filter(b => 
+        b.StartDate <= today && b.EndDate >= today &&
+        b.Overall_Status !== "ยกเลิก"
+      );
+
+      if (todayList.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="px-6 py-8 text-center text-slate-400 font-sarabun">
+              <i class="fa-regular fa-calendar-check text-3xl mb-2 text-slate-300 block"></i>
+              ไม่มีรายการใช้งานห้องประชุมในวันนี้ ห้องทุกห้องพร้อมให้บริการ
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = todayList.map(b => `
+        <tr class="hover:bg-slate-50 font-sarabun transition">
+          <td class="px-6 py-3 font-semibold text-slate-800 whitespace-nowrap">
+            <i class="fa-regular fa-clock text-brand-600 mr-1"></i>
+            ${b.StartTime} - ${b.EndTime} น.
+          </td>
+          <td class="px-6 py-3 font-medium text-slate-900 whitespace-nowrap">
+            ${b.RoomName}
+          </td>
+          <td class="px-6 py-3 text-slate-700 max-w-xs truncate" title="${b.Objective}">
+            ${b.Objective}
+          </td>
+          <td class="px-6 py-3 text-slate-600 whitespace-nowrap">
+            <div class="font-medium text-slate-800">${b.FullName}</div>
+            <div class="text-[11px] text-slate-400">${b.Department}</div>
+          </td>
+          <td class="px-6 py-3 text-slate-600 whitespace-nowrap">
+            ${b.AttendeeCount || '-'} คน
+          </td>
+          <td class="px-6 py-3 whitespace-nowrap">
+            ${getStatusBadgeHtml(b.Overall_Status)}
+          </td>
+          <td class="px-6 py-3 text-right whitespace-nowrap">
+            <button onclick="viewBookingDetails('${b.BookingID}')" class="px-3 py-1 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-lg text-xs font-semibold transition">
+              ดูรายละเอียด
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // ================= CALENDAR RENDERING =================
+    function renderCalendar() {
+      const container = document.getElementById("calendar-days-container");
+      container.innerHTML = "";
+
+      const year = currentCalendarDate.getFullYear();
+      const month = currentCalendarDate.getMonth();
+      const selectedFilter = document.getElementById("calendar-room-filter").value;
+
+      // Update header
+      const thaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+      document.getElementById("calendar-month-year").textContent = `${thaiMonths[month]} ${year + 543}`;
+
+      // Calculate days
+      const firstDayIndex = new Date(year, month, 1).getDay();
+      const lastDay = new Date(year, month + 1, 0).getDate();
+      const prevLastDay = new Date(year, month, 0).getDate();
+
+      const todayStr = getTodayYMD();
+
+      // Days of previous month
+      for (let x = firstDayIndex; x > 0; x--) {
+        const dayNum = prevLastDay - x + 1;
+        const cell = document.createElement("div");
+        cell.className = "bg-slate-50/60 p-1.5 min-h-[90px] text-slate-300 text-xs";
+        cell.innerHTML = `<span class="font-medium">${dayNum}</span>`;
+        container.appendChild(cell);
+      }
+
+      // Days of current month
+      for (let i = 1; i <= lastDay; i++) {
+        const dayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+        const isToday = dayStr === todayStr;
+
+        // Filter bookings on this day
+        const dayBookings = bookingsData.filter(b => {
+          if (b.Overall_Status === "ยกเลิก") return false;
+          if (selectedFilter !== "all" && b.RoomName !== selectedFilter) return false;
+          return (b.StartDate <= dayStr && b.EndDate >= dayStr);
+        });
+
+        const cell = document.createElement("div");
+        cell.className = `bg-white p-1.5 min-h-[90px] transition hover:bg-blue-50/30 flex flex-col justify-between ${isToday ? 'bg-amber-50/60 ring-2 ring-amber-400 ring-inset' : ''}`;
+        
+        let eventsHtml = dayBookings.map(b => {
+          let badgeColor = "bg-amber-100 text-amber-900 border-amber-300";
+          if (b.Overall_Status === "อนุมัติเรียบร้อย") badgeColor = "bg-emerald-100 text-emerald-900 border-emerald-300";
+          else if (b.Overall_Status === "ห้องพร้อม-รออนุมัติ") badgeColor = "bg-sky-100 text-sky-900 border-sky-300";
+          else if (b.Overall_Status === "ไม่อนุมัติ" || b.Overall_Status === "ห้องไม่พร้อมใช้งาน") badgeColor = "bg-rose-100 text-rose-900 border-rose-300";
+
+          return `
+            <div onclick="viewBookingDetails('${b.BookingID}')" title="${b.RoomName}: ${b.Objective} (${b.StartTime}-${b.EndTime})" class="cursor-pointer px-1.5 py-0.5 mb-1 rounded text-[10px] font-medium border truncate ${badgeColor} transition hover:scale-[1.02]">
+              <span class="font-bold">${b.StartTime}</span> ${b.RoomName}
+            </div>
+          `;
+        }).join('');
+
+        cell.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs font-semibold ${isToday ? 'w-5 h-5 rounded-full bg-amber-500 text-slate-900 flex items-center justify-center font-bold' : 'text-slate-700'}">${i}</span>
+              ${dayBookings.length > 0 ? `<span class="text-[9px] px-1 rounded-full bg-slate-100 text-slate-500 font-bold">${dayBookings.length}</span>` : ''}
+            </div>
+            <div class="space-y-0.5 overflow-hidden max-h-[85px] scrollbar-thin">
+              ${eventsHtml}
+            </div>
+          </div>
+          <button onclick="bookSpecificDate('${dayStr}')" class="text-[10px] text-slate-300 hover:text-brand-600 w-full text-right pt-1 opacity-0 hover:opacity-100 transition">
+            + จองวันนี้
+          </button>
+        `;
+        container.appendChild(cell);
+      }
+
+      // Next month filler
+      const totalCells = firstDayIndex + lastDay;
+      const remainingCells = (7 - (totalCells % 7)) % 7;
+      for (let j = 1; j <= remainingCells; j++) {
+        const cell = document.createElement("div");
+        cell.className = "bg-slate-50/60 p-1.5 min-h-[90px] text-slate-300 text-xs";
+        cell.innerHTML = `<span class="font-medium">${j}</span>`;
+        container.appendChild(cell);
+      }
+    }
+
+    function changeMonth(direction) {
+      currentCalendarDate.setMonth(currentCalendarDate.getMonth() + direction);
+      renderCalendar();
+    }
+
+    function goToTodayMonth() {
+      currentCalendarDate = new Date();
+      renderCalendar();
+    }
+
+    function bookSpecificDate(dateStr) {
+      switchTab('booking');
+      document.getElementById("form-start-date").value = dateStr;
+      document.getElementById("form-end-date").value = dateStr;
+      triggerAvailabilityCheck();
+    }
+
+    function quickBookRoom(roomName) {
+      switchTab('booking');
+      const radio = document.querySelector(`input[name="roomName"][value="${roomName}"]`);
+      if (radio) radio.checked = true;
+      triggerAvailabilityCheck();
+    }
+
+    // ================= REAL-TIME CONFLICT CHECKER =================
+    function triggerAvailabilityCheck() {
+      const roomRadio = document.querySelector('input[name="roomName"]:checked');
+      if (!roomRadio) return;
+
+      const roomName = roomRadio.value;
+      const startDate = document.getElementById("form-start-date").value;
+      const startTime = document.getElementById("form-start-time").value;
+      const endDate = document.getElementById("form-end-date").value;
+      const endTime = document.getElementById("form-end-time").value;
+
+      if (!startDate || !startTime || !endDate || !endTime) return;
+
+      const statusBox = document.getElementById("availability-status-box");
+      statusBox.classList.remove("hidden");
+
+      if (roomName === "อื่นๆ") {
+        statusBox.className = "p-3 rounded-xl border border-blue-200 bg-blue-50 text-blue-900 text-xs flex items-center space-x-2";
+        statusBox.innerHTML = `<i class="fa-solid fa-circle-info text-blue-600 text-base"></i><span>ห้องอื่นๆ: เจ้าหน้าที่จะตรวจสอบสถานที่ตามที่ระบุในคำขอ</span>`;
+        return;
+      }
+
+      // ตรวจสอบ Conflict
+      const reqStart = new Date(`${startDate}T${startTime}`);
+      const reqEnd = new Date(`${endDate}T${endTime}`);
+
+      if (reqStart >= reqEnd) {
+        statusBox.className = "p-3 rounded-xl border border-rose-300 bg-rose-50 text-rose-900 text-xs flex items-center space-x-2";
+        statusBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-rose-600 text-base"></i><span>เวลาเริ่มต้นต้องมาก่อนเวลาสิ้นสุด</span>`;
+        return;
+      }
+
+      const conflicts = bookingsData.filter(b => {
+        if (b.RoomName !== roomName) return false;
+        if (b.Overall_Status === "ยกเลิก" || b.Overall_Status === "ไม่อนุมัติ") return false;
+
+        const bStart = new Date(`${b.StartDate}T${b.StartTime}`);
+        const bEnd = new Date(`${b.EndDate}T${b.EndTime}`);
+        return (reqStart < bEnd && reqEnd > bStart);
+      });
+
+      if (conflicts.length > 0) {
+        const c = conflicts[0];
+        statusBox.className = "p-3 rounded-xl border border-rose-300 bg-rose-50 text-rose-900 text-xs space-y-1";
+        statusBox.innerHTML = `
+          <div class="flex items-center space-x-2 font-bold text-rose-800">
+            <i class="fa-solid fa-circle-xmark text-rose-600 text-base"></i>
+            <span>ไม่สามารถจองได้: ช่วงเวลานี้มีการจองซ้อนทับอยู่แล้ว</span>
+          </div>
+          <div class="pl-6 text-[11px] text-rose-700">
+            มีการจอง: <strong>${c.Objective}</strong> โดย ${c.FullName} (${c.Department}) เวลา ${c.StartTime} - ${c.EndTime} น.
+          </div>
+        `;
+        document.getElementById("btn-submit-booking").disabled = true;
+        document.getElementById("btn-submit-booking").classList.add("opacity-50", "cursor-not-allowed");
+      } else {
+        statusBox.className = "p-3 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-900 text-xs flex items-center space-x-2";
+        statusBox.innerHTML = `
+          <i class="fa-solid fa-circle-check text-emerald-600 text-base"></i>
+          <span><strong>${roomName}</strong> ว่างในช่วงเวลานี้ สามารถยื่นคำขอจองได้</span>
+        `;
+        document.getElementById("btn-submit-booking").disabled = false;
+        document.getElementById("btn-submit-booking").classList.remove("opacity-50", "cursor-not-allowed");
+      }
+    }
+
+    // ================= FORM SUBMISSION =================
+    async function handleBookingSubmit(event) {
+      event.preventDefault();
+
+      const form = event.target;
+      const formData = new FormData(form);
+
+      // Collect selected equipments
+      const equipments = [];
+      form.querySelectorAll('input[name="equipments"]:checked').forEach(cb => {
+        equipments.push(cb.value);
+      });
+
+      const bookingPayload = {
+        fullName: formData.get("fullName"),
+        position: formData.get("position"),
+        department: formData.get("department"),
+        phone: formData.get("phone"),
+        objective: formData.get("objective"),
+        roomName: formData.get("roomName"),
+        startDate: formData.get("startDate"),
+        endDate: formData.get("endDate"),
+        startTime: formData.get("startTime"),
+        endTime: formData.get("endTime"),
+        attendeeCount: formData.get("attendeeCount"),
+        equipments: equipments,
+        otherEquipment: formData.get("otherEquipment"),
+        remarks: formData.get("remarks")
+      };
+
+      Swal.fire({
+        title: 'ยืนยันการส่งคำขอจองห้องประชุม?',
+        html: `
+          <div class="text-left text-sm font-sarabun space-y-1 p-2 bg-slate-50 rounded-lg">
+            <p><strong>ห้องประชุม:</strong> ${bookingPayload.roomName}</p>
+            <p><strong>วันที่:</strong> ${bookingPayload.startDate} ถึง ${bookingPayload.endDate}</p>
+            <p><strong>เวลา:</strong> ${bookingPayload.startTime} - ${bookingPayload.endTime} น.</p>
+            <p><strong>ผู้ขอใช้:</strong> ${bookingPayload.fullName} (${bookingPayload.department})</p>
+          </div>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#1e3a8a',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'ยืนยันการส่งคำขอ',
+        cancelButtonText: 'แก้ไขข้อมูล'
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          Swal.fire({
+            title: 'กำลังบันทึกข้อมูลลง Google Sheets...',
+            text: 'กรุณารอสักครู่',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+          });
+
+          // If WebApp URL is present, send POST
+          if (webAppUrl && webAppUrl.trim() !== "") {
+            try {
+              const res = await fetch(webAppUrl, {
+                method: "POST",
+                body: JSON.stringify({
+                  action: "createBooking",
+                  data: bookingPayload
+                })
+              });
+              const resJson = await res.json();
+              if (resJson.success) {
+                form.reset();
+                refreshData();
+                Swal.fire({
+                  icon: 'success',
+                  title: 'ส่งคำขอสำเร็จ!',
+                  text: `รหัสคำขอจอง: ${resJson.bookingId}`,
+                  confirmButtonColor: '#1e3a8a'
+                }).then(() => {
+                  switchTab('approval');
+                });
+                return;
+              } else {
+                throw new Error(resJson.message);
+              }
+            } catch (err) {
+              console.warn("API request failed, fallback to local state: ", err);
+            }
+          }
+
+          // Local state fallback (Instant Demo)
+          const todayClean = getTodayYMD().replace(/-/g, '');
+          const newId = `TL-${todayClean}-${String(bookingsData.length + 1).padStart(3, '0')}`;
+          const newEntry = {
+            BookingID: newId,
+            Timestamp: new Date().toLocaleString('th-TH'),
+            ...bookingPayload,
+            Equipments: equipments.join(", "),
+            Step1_Certifier_Name: "นายเอกราช เขียวทอง (หัวหน้างานศูนย์ดิจิทัลและสื่อสารองค์กร)",
+            Step1_Status: "รอการรับรอง",
+            Step1_Timestamp: "",
+            Step2_Inspector_Name: "นายวัชรพงศ์ โสภา (เจ้าหน้าที่งานศูนย์ดิจิทัลและสื่อสารองค์กร)",
+            Step2_RoomStatus: "รอการตรวจสอบ",
+            Step2_Note: "",
+            Step2_Timestamp: "",
+            Step3_Approver_Name: "นายชาตรี เริงชัยภูมิ (รองผู้อำนวยการฝ่ายพัฒนายุทธศาสตร์และแผนงาน)",
+            Step3_Status: "รอการอนุมัติ",
+            Step3_Note: "",
+            Step3_Timestamp: "",
+            Overall_Status: "รอตรวจสอบ"
+          };
+
+          bookingsData.unshift(newEntry);
+          form.reset();
+          refreshData();
+
+          Swal.fire({
+            icon: 'success',
+            title: 'บันทึกคำขอจองเรียบร้อยแล้ว!',
+            html: `รหัสคำขอของคุณคือ: <strong class="text-brand-800 text-lg">${newId}</strong><br><span class="text-xs text-slate-500">ข้อมูลถูกบันทึกและส่งเข้าสู่ขั้นตอนการพิจารณาตรวจสอบแล้ว</span>`,
+            confirmButtonColor: '#1e3a8a'
+          }).then(() => {
+            switchTab('approval');
+          });
+        }
+      });
+    }
+
+    // ================= APPROVAL WORKFLOW HUB =================
+    let currentRoleFilter = 'all';
+
+    function filterApprovalRole(role) {
+      currentRoleFilter = role;
+      ['all', 'step1', 'step2', 'step3'].forEach(r => {
+        const btn = document.getElementById(`role-filter-${r}`);
+        if (r === role) {
+          btn.className = "px-3 py-1.5 rounded-lg bg-brand-800 text-white font-bold transition";
+        } else {
+          btn.className = "px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-100 transition";
+        }
+      });
+      renderApprovalHub();
+    }
+
+    function renderApprovalHub() {
+      const container = document.getElementById("approval-cards-container");
+      container.innerHTML = "";
+
+      let filtered = bookingsData;
+      if (currentRoleFilter === 'step1') {
+        filtered = bookingsData.filter(b => b.Step1_Status === "รอการรับรอง");
+      } else if (currentRoleFilter === 'step2') {
+        filtered = bookingsData.filter(b => b.Step1_Status === "รับรองแล้ว" && b.Step2_RoomStatus === "รอการตรวจสอบ");
+      } else if (currentRoleFilter === 'step3') {
+        filtered = bookingsData.filter(b => b.Step2_RoomStatus === "พร้อมใช้งาน" && b.Step3_Status === "รอการอนุมัติ");
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white rounded-2xl p-8 border border-slate-200 text-center text-slate-400 font-sarabun">
+            <i class="fa-solid fa-clipboard-check text-4xl mb-3 text-emerald-400 block"></i>
+            <p class="font-bold text-slate-700">ไม่มีรายการคำขอค้างการพิจารณาในหมวดหมู่นี้</p>
+            <p class="text-xs text-slate-400 mt-1">ทุกคำขอได้รับการดำเนินการเรียบร้อยแล้ว</p>
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(b => {
+        const card = document.createElement("div");
+        card.className = "bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition space-y-4";
+        card.innerHTML = `
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-2">
+            <div class="flex items-center space-x-3">
+              <span class="px-2.5 py-1 rounded bg-brand-50 text-brand-800 text-xs font-mono font-bold">${b.BookingID}</span>
+              <span class="text-xs text-slate-400">${b.Timestamp}</span>
+            </div>
+            <div>
+              ${getStatusBadgeHtml(b.Overall_Status)}
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs font-sarabun text-slate-700">
+            <div>
+              <p class="text-slate-400 text-[11px]">ผู้ขอใช้และหน่วยงาน</p>
+              <p class="font-bold text-slate-900 text-sm mt-0.5">${b.FullName} (${b.Position})</p>
+              <p class="text-slate-600">${b.Department} | โทร. ${b.Phone}</p>
+            </div>
+            <div>
+              <p class="text-slate-400 text-[11px]">ห้องประชุมและกำหนดการ</p>
+              <p class="font-bold text-brand-800 text-sm mt-0.5">${b.RoomName}</p>
+              <p class="text-slate-600">${b.StartDate} ถึง ${b.EndDate} เวลา ${b.StartTime} - ${b.EndTime} น. (${b.AttendeeCount} คน)</p>
+            </div>
+            <div>
+              <p class="text-slate-400 text-[11px]">วัตถุประสงค์การใช้งาน</p>
+              <p class="font-semibold text-slate-800 mt-0.5 line-clamp-2">${b.Objective}</p>
+            </div>
+          </div>
+
+          <!-- Stepper Visualizer -->
+          <div class="pt-3 border-t border-slate-100">
+            <div class="grid grid-cols-3 gap-2 text-center text-xs">
+              
+              <!-- Step 1 Box -->
+              <div class="p-2.5 rounded-xl border ${b.Step1_Status === 'รับรองแล้ว' ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : (b.Step1_Status === 'ไม่รับรอง' ? 'bg-rose-50 border-rose-300 text-rose-800' : 'bg-amber-50 border-amber-300 text-amber-800')}">
+                <p class="font-bold">1. รับรองคำขอ</p>
+                <p class="text-[10px] text-slate-500 truncate">นายเอกราช เขียวทอง</p>
+                <p class="font-semibold text-[11px] mt-1">${b.Step1_Status || 'รอการรับรอง'}</p>
+                ${b.Step1_Status === 'รอการรับรอง' ? `
+                  <div class="mt-2 flex space-x-1">
+                    <button onclick="executeApproval('${b.BookingID}', 1, 'รับรองแล้ว')" class="flex-1 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-bold">รับรอง</button>
+                    <button onclick="executeApproval('${b.BookingID}', 1, 'ไม่รับรอง')" class="flex-1 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded text-[10px] font-bold">ไม่รับรอง</button>
+                  </div>
+                ` : ''}
+              </div>
+
+              <!-- Step 2 Box -->
+              <div class="p-2.5 rounded-xl border ${b.Step2_RoomStatus === 'พร้อมใช้งาน' ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : (b.Step2_RoomStatus === 'ไม่พร้อมใช้งาน' ? 'bg-rose-50 border-rose-300 text-rose-800' : 'bg-slate-50 border-slate-200 text-slate-600')}">
+                <p class="font-bold">2. ตรวจสอบสภาพห้อง</p>
+                <p class="text-[10px] text-slate-500 truncate">นายวัชรพงศ์ โสภา</p>
+                <p class="font-semibold text-[11px] mt-1">${b.Step2_RoomStatus || 'รอการตรวจสอบ'}</p>
+                ${(b.Step1_Status === 'รับรองแล้ว' && b.Step2_RoomStatus === 'รอการตรวจสอบ') ? `
+                  <div class="mt-2 flex space-x-1">
+                    <button onclick="promptInspectRoom('${b.BookingID}', 'พร้อมใช้งาน')" class="flex-1 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded text-[10px] font-bold">พร้อมใช้</button>
+                    <button onclick="promptInspectRoom('${b.BookingID}', 'ไม่พร้อมใช้งาน')" class="flex-1 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded text-[10px] font-bold">ไม่พร้อม</button>
+                  </div>
+                ` : ''}
+              </div>
+
+              <!-- Step 3 Box -->
+              <div class="p-2.5 rounded-xl border ${b.Step3_Status === 'อนุมัติ' ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : (b.Step3_Status === 'ไม่อนุมัติ' ? 'bg-rose-50 border-rose-300 text-rose-800' : 'bg-slate-50 border-slate-200 text-slate-600')}">
+                <p class="font-bold">3. พิจารณาอนุมัติ</p>
+                <p class="text-[10px] text-slate-500 truncate">นายชาตรี เริงชัยภูมิ</p>
+                <p class="font-semibold text-[11px] mt-1">${b.Step3_Status || 'รอการอนุมัติ'}</p>
+                ${(b.Step2_RoomStatus === 'พร้อมใช้งาน' && b.Step3_Status === 'รอการอนุมัติ') ? `
+                  <div class="mt-2 flex space-x-1">
+                    <button onclick="promptFinalApproval('${b.BookingID}', 'อนุมัติ')" class="flex-1 py-1 bg-brand-800 hover:bg-brand-900 text-white rounded text-[10px] font-bold">อนุมัติ</button>
+                    <button onclick="promptFinalApproval('${b.BookingID}', 'ไม่อนุมัติ')" class="flex-1 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded text-[10px] font-bold">ไม่อนุมัติ</button>
+                  </div>
+                ` : ''}
+              </div>
+
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end space-x-2 pt-2">
+            <button onclick="printOfficialForm('${b.BookingID}')" class="px-3 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center space-x-1">
+              <i class="fa-solid fa-print"></i>
+              <span>พิมพ์ใบขอใช้ห้อง</span>
+            </button>
+            <button onclick="viewBookingDetails('${b.BookingID}')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">
+              ดูข้อมูลฉบับเต็ม
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    async function executeApproval(bookingId, step, status, comment = "") {
+      const b = bookingsData.find(x => x.BookingID === bookingId);
+      if (!b) return;
+
+      const nowTime = new Date().toLocaleString('th-TH');
+
+      if (step === 1) {
+        b.Step1_Status = status;
+        b.Step1_Timestamp = nowTime;
+        b.Overall_Status = (status === "รับรองแล้ว") ? "รับรองแล้ว-รอตรวจห้อง" : "ไม่ผ่านการรับรอง";
+      }
+
+      if (webAppUrl && webAppUrl.trim() !== "") {
+        try {
+          await fetch(webAppUrl, {
+            method: "POST",
+            body: JSON.stringify({
+              action: "updateApproval",
+              bookingId: bookingId,
+              step: step,
+              status: status,
+              comment: comment
+            })
+          });
+        } catch (e) {
+          console.warn("Update to webapp failed, saved locally", e);
+        }
+      }
+
+      refreshData();
+      Swal.fire({
+        icon: 'success',
+        title: 'ดำเนินการเรียบร้อย',
+        text: `ขั้นตอนที่ ${step}: ${status}`,
+        timer: 1500,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top-end'
+      });
+    }
+
+    function promptInspectRoom(bookingId, status) {
+      Swal.fire({
+        title: `บันทึกการตรวจสอบห้อง: ${status}`,
+        input: 'textarea',
+        inputLabel: 'ความเห็น/หมายเหตุการตรวจสอบสภาพห้องและครุภัณฑ์:',
+        inputPlaceholder: 'เช่น อุปกรณ์พร้อมใช้งาน ระบบแอร์เปิดได้ตามปกติ...',
+        showCancelButton: true,
+        confirmButtonText: 'บันทึกผลตรวจสอบ',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: status === 'พร้อมใช้งาน' ? '#0d9488' : '#e11d48'
+      }).then((res) => {
+        if (res.isConfirmed) {
+          const b = bookingsData.find(x => x.BookingID === bookingId);
+          if (b) {
+            b.Step2_RoomStatus = status;
+            b.Step2_Note = res.value || "";
+            b.Step2_Timestamp = new Date().toLocaleString('th-TH');
+            b.Overall_Status = (status === "พร้อมใช้งาน") ? "ห้องพร้อม-รออนุมัติ" : "ห้องไม่พร้อมใช้งาน";
+            
+            if (webAppUrl && webAppUrl.trim() !== "") {
+              fetch(webAppUrl, {
+                method: "POST",
+                body: JSON.stringify({
+                  action: "updateApproval",
+                  bookingId: bookingId,
+                  step: 2,
+                  status: status,
+                  comment: res.value || ""
+                })
+              }).catch(err => console.warn(err));
+            }
+
+            refreshData();
+            Swal.fire({
+              icon: 'success',
+              title: 'บันทึกผลตรวจสอบสภาพห้องสำเร็จ',
+              timer: 1500,
+              showConfirmButton: false,
+              toast: true,
+              position: 'top-end'
+            });
+          }
+        }
+      });
+    }
+
+    function promptFinalApproval(bookingId, status) {
+      Swal.fire({
+        title: `คำสั่งการพิจารณาอนุมัติ: ${status}`,
+        input: 'textarea',
+        inputLabel: 'ความเห็น/ข้อสั่งการของผู้มีอำนาจอนุมัติ (นายชาตรี เริงชัยภูมิ):',
+        inputPlaceholder: 'เช่น อนุมัติตามระเบียบ ขอให้ดูแลความสะอาด...',
+        showCancelButton: true,
+        confirmButtonText: 'ยืนยันผลการอนุมัติ',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: status === 'อนุมัติ' ? '#1e3a8a' : '#e11d48'
+      }).then((res) => {
+        if (res.isConfirmed) {
+          const b = bookingsData.find(x => x.BookingID === bookingId);
+          if (b) {
+            b.Step3_Status = status;
+            b.Step3_Note = res.value || "";
+            b.Step3_Timestamp = new Date().toLocaleString('th-TH');
+            b.Overall_Status = (status === "อนุมัติ") ? "อนุมัติเรียบร้อย" : "ไม่อนุมัติ";
+
+            if (webAppUrl && webAppUrl.trim() !== "") {
+              fetch(webAppUrl, {
+                method: "POST",
+                body: JSON.stringify({
+                  action: "updateApproval",
+                  bookingId: bookingId,
+                  step: 3,
+                  status: status,
+                  comment: res.value || ""
+                })
+              }).catch(err => console.warn(err));
+            }
+
+            refreshData();
+            Swal.fire({
+              icon: 'success',
+              title: 'บันทึกการพิจารณาอนุมัติเรียบร้อย',
+              timer: 1500,
+              showConfirmButton: false,
+              toast: true,
+              position: 'top-end'
+            });
+          }
+        }
+      });
+    }
+
+    // ================= REPORTS & ANALYTICS =================
+    function renderReportTable() {
+      const tbody = document.getElementById("report-tbody");
+      const search = (document.getElementById("report-search").value || "").toLowerCase();
+      const roomFilter = document.getElementById("report-room-filter").value;
+      const statusFilter = document.getElementById("report-status-filter").value;
+
+      const filtered = bookingsData.filter(b => {
+        if (roomFilter !== "all" && b.RoomName !== roomFilter) return false;
+        if (statusFilter !== "all" && b.Overall_Status !== statusFilter) return false;
+        if (search) {
+          const text = `${b.BookingID} ${b.FullName} ${b.Department} ${b.Objective} ${b.RoomName}`.toLowerCase();
+          if (!text.includes(search)) return false;
+        }
+        return true;
+      });
+
+      document.getElementById("report-record-count").textContent = filtered.length;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" class="px-6 py-8 text-center text-slate-400 font-sarabun">
+              ไม่พบข้อมูลที่ตรงกับเงื่อนไขการค้นหา
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(b => `
+        <tr class="hover:bg-slate-50 font-sarabun transition">
+          <td class="px-4 py-3 font-mono font-bold text-brand-800">${b.BookingID}</td>
+          <td class="px-4 py-3 whitespace-nowrap">${b.StartDate}</td>
+          <td class="px-4 py-3 whitespace-nowrap">${b.StartTime} - ${b.EndTime} น.</td>
+          <td class="px-4 py-3 font-semibold text-slate-800 whitespace-nowrap">${b.RoomName}</td>
+          <td class="px-4 py-3 max-w-xs truncate" title="${b.Objective}">${b.Objective}</td>
+          <td class="px-4 py-3 whitespace-nowrap">${b.FullName}</td>
+          <td class="px-4 py-3 whitespace-nowrap text-slate-500">${b.Department}</td>
+          <td class="px-4 py-3 whitespace-nowrap">${getStatusBadgeHtml(b.Overall_Status)}</td>
+          <td class="px-4 py-3 text-center whitespace-nowrap">
+            <button onclick="printOfficialForm('${b.BookingID}')" class="p-1.5 text-slate-600 hover:text-brand-800 hover:bg-slate-100 rounded-lg transition" title="พิมพ์ใบคำขอ">
+              <i class="fa-solid fa-print"></i>
+            </button>
+            <button onclick="viewBookingDetails('${b.BookingID}')" class="p-1.5 text-slate-600 hover:text-brand-800 hover:bg-slate-100 rounded-lg transition ml-1" title="ดูรายละเอียด">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function filterReportTable() {
+      renderReportTable();
+    }
+
+    function updateCharts() {
+      // 1. Room Usage Chart
+      const roomCounts = {};
+      ROOMS.forEach(r => { if (r.name !== "อื่นๆ") roomCounts[r.name] = 0; });
+
+      bookingsData.forEach(b => {
+        if (b.RoomName && b.Overall_Status !== "ยกเลิก") {
+          roomCounts[b.RoomName] = (roomCounts[b.RoomName] || 0) + 1;
+        }
+      });
+
+      const roomLabels = Object.keys(roomCounts);
+      const roomData = Object.values(roomCounts);
+
+      const ctxRoom = document.getElementById("roomUsageChart");
+      if (ctxRoom) {
+        if (roomUsageChartInstance) roomUsageChartInstance.destroy();
+        roomUsageChartInstance = new Chart(ctxRoom, {
+          type: 'doughnut',
+          data: {
+            labels: roomLabels,
+            datasets: [{
+              data: roomData,
+              backgroundColor: ['#2563eb', '#d97706', '#059669', '#e11d48', '#7c3aed', '#0891b2', '#64748b']
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'bottom', labels: { font: { family: 'Kanit', size: 11 } } }
+            }
+          }
+        });
+      }
+
+      // 2. Department Chart
+      const deptCounts = {};
+      bookingsData.forEach(b => {
+        if (b.Department && b.Overall_Status !== "ยกเลิก") {
+          deptCounts[b.Department] = (deptCounts[b.Department] || 0) + 1;
+        }
+      });
+
+      const deptLabels = Object.keys(deptCounts);
+      const deptData = Object.values(deptCounts);
+
+      const ctxDept = document.getElementById("departmentChart");
+      if (ctxDept) {
+        if (departmentChartInstance) departmentChartInstance.destroy();
+        departmentChartInstance = new Chart(ctxDept, {
+          type: 'bar',
+          data: {
+            labels: deptLabels,
+            datasets: [{
+              label: 'จำนวนครั้งที่ขอใช้',
+              data: deptData,
+              backgroundColor: '#1e3a8a',
+              borderRadius: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: { beginAtZero: true, ticks: { stepSize: 1 } }
+            },
+            plugins: {
+              legend: { display: false }
+            }
+          }
+        });
+      }
+    }
+
+    function exportTableToCSV(filename) {
+      const rows = [];
+      rows.push(["BookingID", "Timestamp", "FullName", "Position", "Department", "Phone", "Objective", "RoomName", "StartDate", "EndDate", "StartTime", "EndTime", "AttendeeCount", "Equipments", "Status"]);
+
+      bookingsData.forEach(b => {
+        rows.push([
+          b.BookingID,
+          b.Timestamp,
+          `"${b.FullName || ''}"`,
+          `"${b.Position || ''}"`,
+          `"${b.Department || ''}"`,
+          `"${b.Phone || ''}"`,
+          `"${(b.Objective || '').replace(/"/g, '""')}"`,
+          `"${b.RoomName || ''}"`,
+          b.StartDate,
+          b.EndDate,
+          b.StartTime,
+          b.EndTime,
+          b.AttendeeCount || 0,
+          `"${(b.Equipments || '').replace(/"/g, '""')}"`,
+          `"${b.Overall_Status || ''}"`
+        ]);
+      });
+
+      const csvContent = "\uFEFF" + rows.map(e => e.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function printReportSummary() {
+      window.print();
+    }
+
+    // ================= MODAL & DETAILS VIEWER =================
+    function viewBookingDetails(bookingId) {
+      currentSelectedBookingId = bookingId;
+      const b = bookingsData.find(x => x.BookingID === bookingId);
+      if (!b) return;
+
+      const content = document.getElementById("modal-details-content");
+      content.innerHTML = `
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div>
+            <span class="text-xs text-slate-400">รหัสคำขอ:</span>
+            <h4 class="text-lg font-bold font-mono text-brand-800">${b.BookingID}</h4>
+          </div>
+          <div>
+            ${getStatusBadgeHtml(b.Overall_Status)}
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <h5 class="font-bold text-slate-800 font-kanit text-sm border-b pb-1">1. ข้อมูลผู้ขอใช้และวัตถุประสงค์</h5>
+            <div class="grid grid-cols-2 gap-2 text-xs mt-2">
+              <p><strong>ผู้ขอใช้:</strong> ${b.FullName}</p>
+              <p><strong>ตำแหน่ง:</strong> ${b.Position}</p>
+              <p><strong>หน่วยงาน/แผนก:</strong> ${b.Department}</p>
+              <p><strong>เบอร์โทรศัพท์:</strong> ${b.Phone}</p>
+            </div>
+            <div class="mt-2 text-xs bg-slate-50 p-3 rounded-lg border border-slate-200">
+              <p><strong>วัตถุประสงค์ / เรื่องที่ใช้งาน:</strong></p>
+              <p class="mt-1 text-slate-800">${b.Objective}</p>
+            </div>
+          </div>
+
+          <div>
+            <h5 class="font-bold text-slate-800 font-kanit text-sm border-b pb-1">2. สถานที่และกำหนดการ</h5>
+            <div class="grid grid-cols-2 gap-2 text-xs mt-2">
+              <p><strong>ห้องประชุม:</strong> <span class="text-brand-700 font-bold">${b.RoomName}</span></p>
+              <p><strong>จำนวนผู้เข้าร่วม:</strong> ~${b.AttendeeCount} คน</p>
+              <p><strong>วันที่:</strong> ${b.StartDate} ถึง ${b.EndDate}</p>
+              <p><strong>เวลา:</strong> ${b.StartTime} - ${b.EndTime} น.</p>
+            </div>
+          </div>
+
+          <div>
+            <h5 class="font-bold text-slate-800 font-kanit text-sm border-b pb-1">3. ครุภัณฑ์และสิ่งอำนวยความสะดวก</h5>
+            <p class="text-xs mt-2">${b.Equipments || 'ไม่มีการขอครุภัณฑ์เพิ่มเติม'}</p>
+            ${b.OtherEquipment ? `<p class="text-xs text-slate-600 mt-1"><strong>อุปกรณ์อื่นๆ:</strong> ${b.OtherEquipment}</p>` : ''}
+            ${b.Remarks ? `<p class="text-xs text-slate-500 mt-1"><strong>หมายเหตุ:</strong> ${b.Remarks}</p>` : ''}
+          </div>
+
+          <div>
+            <h5 class="font-bold text-slate-800 font-kanit text-sm border-b pb-1">4. สายการพิจารณาและตรวจสอบ (Workflow)</h5>
+            <div class="space-y-2 mt-2 text-xs">
+              <div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                <div class="flex justify-between font-bold text-slate-800">
+                  <span>1. หัวหน้างาน/ผู้รับรอง (นายเอกราช เขียวทอง)</span>
+                  <span class="${b.Step1_Status === 'รับรองแล้ว' ? 'text-emerald-600' : 'text-amber-600'}">${b.Step1_Status || 'รอการรับรอง'}</span>
+                </div>
+                <div class="text-[11px] text-slate-400 mt-0.5">${b.Step1_Timestamp ? 'เวลา: ' + b.Step1_Timestamp : ''}</div>
+              </div>
+
+              <div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                <div class="flex justify-between font-bold text-slate-800">
+                  <span>2. จนท. ผู้ตรวจสอบห้อง (นายวัชรพงศ์ โสภา)</span>
+                  <span class="${b.Step2_RoomStatus === 'พร้อมใช้งาน' ? 'text-emerald-600' : 'text-slate-500'}">${b.Step2_RoomStatus || 'รอการตรวจสอบ'}</span>
+                </div>
+                ${b.Step2_Note ? `<div class="text-[11px] text-slate-600 mt-0.5">ความเห็น: ${b.Step2_Note}</div>` : ''}
+                <div class="text-[11px] text-slate-400 mt-0.5">${b.Step2_Timestamp ? 'เวลา: ' + b.Step2_Timestamp : ''}</div>
+              </div>
+
+              <div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                <div class="flex justify-between font-bold text-slate-800">
+                  <span>3. ผู้พิจารณาอนุมัติ (นายชาตรี เริงชัยภูมิ)</span>
+                  <span class="${b.Step3_Status === 'อนุมัติ' ? 'text-emerald-600' : 'text-slate-500'}">${b.Step3_Status || 'รอการอนุมัติ'}</span>
+                </div>
+                ${b.Step3_Note ? `<div class="text-[11px] text-slate-600 mt-0.5">ความเห็น: ${b.Step3_Note}</div>` : ''}
+                <div class="text-[11px] text-slate-400 mt-0.5">${b.Step3_Timestamp ? 'เวลา: ' + b.Step3_Timestamp : ''}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("modal-details").classList.remove("hidden");
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.add("hidden");
+    }
+
+    function openConfigModal() {
+      document.getElementById("modal-config").classList.remove("hidden");
+    }
+
+    function saveConfig() {
+      const url = document.getElementById("cfg-webapp-url").value.trim();
+      webAppUrl = url;
+      localStorage.setItem("thaluang_webapp_url", url);
+      closeModal("modal-config");
+      refreshData(true);
+    }
+
+    // ================= OFFICIAL PRINT FORM GENERATOR =================
+    function printOfficialForm(bookingId) {
+      const b = bookingsData.find(x => x.BookingID === bookingId);
+      if (!b) return;
+
+      const printArea = document.getElementById("printable-content");
+      printArea.innerHTML = `
+        <div style="font-family: 'Sarabun', sans-serif; padding: 20px; color: #000; line-height: 1.6;">
+          
+          <!-- Header -->
+          <div style="text-align: center; margin-bottom: 25px; border-bottom: 2px solid #000; padding-bottom: 15px;">
+            <div style="font-size: 14pt; font-weight: bold;">แบบฟอร์มขอใช้ห้องประชุมและสิ่งอำนวยความสะดวก</div>
+            <div style="font-size: 16pt; font-weight: bold; margin-top: 5px;">วิทยาลัยเทคนิคท่าหลวงซิเมนต์ไทยอนุสรณ์</div>
+            <div style="font-size: 10pt; color: #444; margin-top: 4px;">ศูนย์ดิจิทัลและสื่อสารองค์กร ฝ่ายพัฒนายุทธศาสตร์และแผนงาน</div>
+          </div>
+
+          <div style="text-align: right; font-size: 11pt; margin-bottom: 15px;">
+            <strong>รหัสคำขอ:</strong> ${b.BookingID}<br>
+            <strong>วันที่ยื่นคำขอ:</strong> ${b.Timestamp}
+          </div>
+
+          <!-- Section 1 -->
+          <div style="margin-bottom: 15px; font-size: 11pt;">
+            <p><strong>เรียน</strong> ผู้อำนวยการวิทยาลัยเทคนิคท่าหลวงซิเมนต์ไทยอนุสรณ์</p>
+            <p style="text-indent: 2.5em; margin-top: 8px;">
+              ด้วยข้าพเจ้า <strong>${b.FullName}</strong> ตำแหน่ง <strong>${b.Position}</strong> 
+              สังกัดหน่วยงาน/แผนกวิชา <strong>${b.Department}</strong> หมายเลขโทรศัพท์ <strong>${b.Phone}</strong>
+              มีความประสงค์ขอใช้ห้องประชุมและสิ่งอำนวยความสะดวก เพื่อดำเนินการ <strong>${b.Objective}</strong>
+            </p>
+          </div>
+
+          <!-- Section 2 -->
+          <div style="margin-bottom: 15px; font-size: 11pt; border: 1px solid #000; padding: 12px; border-radius: 4px;">
+            <div style="font-weight: bold; margin-bottom: 8px;">รายละเอียดการขอใช้:</div>
+            <div>• <strong>สถานที่/ห้องประชุมที่ขอใช้:</strong> ${b.RoomName}</div>
+            <div>• <strong>กำหนดการ:</strong> วันที่ ${b.StartDate} ถึงวันที่ ${b.EndDate} ตั้งแต่เวลา ${b.StartTime} น. ถึง ${b.EndTime} น.</div>
+            <div>• <strong>จำนวนผู้เข้าใช้โดยประมาณ:</strong> ${b.AttendeeCount} คน</div>
+            <div>• <strong>ครุภัณฑ์และสิ่งอำนวยความสะดวก:</strong> ${b.Equipments || 'ไม่มี'}</div>
+            ${b.OtherEquipment ? `<div>• <strong>อุปกรณ์เพิ่มเติม:</strong> ${b.OtherEquipment}</div>` : ''}
+            ${b.Remarks ? `<div>• <strong>หมายเหตุ:</strong> ${b.Remarks}</div>` : ''}
+          </div>
+
+          <!-- Signatures Section 3 Levels -->
+          <div style="margin-top: 30px; font-size: 10.5pt;">
+            <table style="width: 100%; border-collapse: collapse; text-align: center;">
+              <tr>
+                <td style="width: 50%; padding: 15px; vertical-align: top;">
+                  ลงชื่อ.............................................................. ผู้ขอใช้<br>
+                  ( ${b.FullName} )<br>
+                  ตำแหน่ง ${b.Position}<br>
+                  วันที่ ${b.StartDate}
+                </td>
+                <td style="width: 50%; padding: 15px; vertical-align: top; border: 1px dashed #666;">
+                  <strong>1. การรับรองของหัวหน้างาน</strong><br>
+                  ( / ) รับรอง &nbsp;&nbsp;&nbsp;&nbsp; ( &nbsp; ) ไม่รับรอง<br><br>
+                  ลงชื่อ.............................................................. ผู้รับรอง<br>
+                  ( <strong>นายเอกราช เขียวทอง</strong> )<br>
+                  หัวหน้างานศูนย์ดิจิทัลและสื่อสารองค์กร<br>
+                  วันที่ ${b.Step1_Timestamp || '......../......../........'}
+                </td>
+              </tr>
+              <tr>
+                <td style="width: 50%; padding: 15px; vertical-align: top; border: 1px dashed #666; margin-top: 10px;">
+                  <strong>2. ผลการตรวจสอบห้องและครุภัณฑ์</strong><br>
+                  สถานะ: [ ${b.Step2_RoomStatus === 'พร้อมใช้งาน' ? '✓' : ' '} ] พร้อมใช้งาน &nbsp;&nbsp; [ ${b.Step2_RoomStatus === 'ไม่พร้อมใช้งาน' ? '✓' : ' '} ] ไม่พร้อมใช้งาน<br>
+                  ความเห็น: ${b.Step2_Note || '........................................................'}<br><br>
+                  ลงชื่อ.............................................................. ผู้ตรวจ<br>
+                  ( <strong>นายวัชรพงศ์ โสภา</strong> )<br>
+                  เจ้าหน้าที่งานศูนย์ดิจิทัลและสื่อสารองค์กร<br>
+                  วันที่ ${b.Step2_Timestamp || '......../......../........'}
+                </td>
+                <td style="width: 50%; padding: 15px; vertical-align: top; border: 1px solid #000;">
+                  <strong>3. การพิจารณาอนุมัติ</strong><br>
+                  คำสั่ง: [ ${b.Step3_Status === 'อนุมัติ' ? '✓' : ' '} ] อนุมัติ &nbsp;&nbsp; [ ${b.Step3_Status === 'ไม่อนุมัติ' ? '✓' : ' '} ] ไม่อนุมัติ<br>
+                  ข้อสั่งการ: ${b.Step3_Note || '........................................................'}<br><br>
+                  ลงชื่อ.............................................................. ผู้อนุมัติ<br>
+                  ( <strong>นายชาตรี เริงชัยภูมิ</strong> )<br>
+                  รองผู้อำนวยการฝ่ายพัฒนายุทธศาสตร์และแผนงาน<br>
+                  วันที่ ${b.Step3_Timestamp || '......../......../........'}
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="margin-top: 25px; text-align: center; font-size: 9pt; color: #666; border-top: 1px solid #ccc; padding-top: 8px;">
+            เอกสารฉบับนี้พิมพ์จากระบบจองห้องประชุมออนไลน์ วิทยาลัยเทคนิคท่าหลวงซิเมนต์ไทยอนุสรณ์ เชื่อมต่อ Google Sheets
+          </div>
+        </div>
+      `;
+
+      window.print();
+    }
+
+    // ================= HELPER FUNCTIONS =================
+    function getStatusBadgeHtml(status) {
+      if (status === "อนุมัติเรียบร้อย") {
+        return `<span class="badge-approved px-2.5 py-1 rounded-full text-xs font-semibold inline-flex items-center"><i class="fa-solid fa-circle-check mr-1"></i>อนุมัติเรียบร้อย</span>`;
+      } else if (status === "ห้องพร้อม-รออนุมัติ") {
+        return `<span class="badge-ready px-2.5 py-1 rounded-full text-xs font-semibold inline-flex items-center"><i class="fa-solid fa-clipboard-check mr-1"></i>ห้องพร้อม-รออนุมัติ</span>`;
+      } else if (status === "รับรองแล้ว-รอตรวจห้อง") {
+        return `<span class="badge-pending px-2.5 py-1 rounded-full text-xs font-semibold inline-flex items-center"><i class="fa-solid fa-user-check mr-1"></i>รับรองแล้ว-รอตรวจห้อง</span>`;
+      } else if (status === "ไม่อนุมัติ" || status === "ไม่ผ่านการรับรอง" || status === "ห้องไม่พร้อมใช้งาน") {
+        return `<span class="badge-rejected px-2.5 py-1 rounded-full text-xs font-semibold inline-flex items-center"><i class="fa-solid fa-circle-xmark mr-1"></i>${status}</span>`;
+      } else {
+        return `<span class="badge-pending px-2.5 py-1 rounded-full text-xs font-semibold inline-flex items-center"><i class="fa-solid fa-hourglass-half mr-1"></i>รอตรวจสอบ</span>`;
+      }
+    }
+  </script>
+</body>
+</html>
